@@ -5,7 +5,7 @@ This Rails plugin makes it easy to add an OLAP interface to your application, wh
 great for administration interfaces. Its main uses are collection information about the
 usage of your application and detecting inconsistencies and problems in your data.
 
-This plugin is developed for the Floorplanner.com website. It is currently being cleanup 
+This plugin is developed for the Floorplanner.com website. It is currently being cleaned
 up for public release. It will be BSD-licensed, so you can use it for any purpose you 
 see fit.
 
