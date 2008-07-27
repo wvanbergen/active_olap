@@ -1,0 +1,13 @@
+Active OLAP
+===========
+
+This Rails plugin makes it easy to add an OLAP interface to your application, which is 
+great for administration interfaces. Its main uses are collection information about the
+usage of your application and detecting inconsistencies and problems in your data.
+
+This plugin is developed for the Floorplanner.com website. It is currently being cleanup 
+up for public release. It will be BSD-licensed, so you can use it for any purpose you 
+see fit.
+
+For some information about this plugin, see the Floorplanner techblog:
+http://techblog.floorplanner.com/tag/active_olap/
