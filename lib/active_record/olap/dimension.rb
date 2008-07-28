@@ -35,7 +35,7 @@ module ActiveRecord::OLAP
     end
 
     def register_category(cat)
-      @categories << [cat, {:expression => {@category_field => cat}}] 
+      @categories << [cat, {:expression => {@category_field => cat}}] # unless has_category?(cat)
     end
 
     def find_category(cat)

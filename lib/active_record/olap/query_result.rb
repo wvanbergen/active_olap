@@ -3,6 +3,9 @@ module ActiveRecord::OLAP
     
     attr_accessor :klass
     attr_accessor :dimensions
+    attr_accessor :result
+    
+    ['each', '[]'].each { |m| delegate m, :to => :result }
     
     def initialize(klass, dimensions, query_result)
       @klass = klass
@@ -12,16 +15,19 @@ module ActiveRecord::OLAP
       update_result_with(query_result)
     end
     
-    def [](category)
-      @result[category]
-    end
-    
     def depth
       @dimensions.length
     end
     
     def inspect
       @result.inspect
+    end
+    
+    
+    def categories_for_dimension(depth)
+      puts @dimensions[depth].inspect
+      puts @dimensions[depth].categories.inspect
+      @dimensions[depth].categories.map(&:first)
     end
     
     protected
@@ -65,7 +71,7 @@ module ActiveRecord::OLAP
         
     def traverse_result_for_unsets(dimensions, result, depth = 1)
       d = dimensions[depth - 1]
-      d.categories.map(&:first).uniq.each do |cat|
+      d.categories.map(&:first).each do |cat|
         result[cat] = (depth >= dimensions.length) ? 0 : {}  unless result.has_key?(cat)
         result[cat] = traverse_result_for_unsets(dimensions, result[cat], depth + 1) unless depth >= dimensions.length
       end
