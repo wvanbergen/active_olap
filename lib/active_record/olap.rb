@@ -3,7 +3,7 @@ module ActiveRecord::OLAP
   def enable_active_olap(config = nil, &block)
 
     self.class_eval { extend ClassMethods }
-    self.named_scope :olap_drilldown, lambda { |*args| self.olap_drilldown_finder_options(args) }    
+    self.named_scope :olap_drilldown, lambda { |hash| self.olap_drilldown_finder_options(hash) }    
     
     self.cattr_accessor :active_olap_dimensions, :active_olap_aggregates
     self.active_olap_dimensions = {}
@@ -53,22 +53,12 @@ module ActiveRecord::OLAP
   
   protected
   
-  def olap_drilldown_finder_options(dimension_and_categories)
-    raise "You have to provide at least one dimension for an OLAP query" if dimension_and_categories.length == 0    
-    raise "You must provide pairs (the dimension and the category to drilldown to)" unless dimension_and_categories.length % 2 == 0
+  def olap_drilldown_finder_options(options)
+    raise "You have to provide at least one dimension for an OLAP query" if options.length == 0    
 
-    dim = nil
-    conditions = []
-    dimension_and_categories.each do |dim_or_cat|
-      if dim.nil?
-        dim = Dimension.create(self, dim_or_cat)
-      else
-        conditions << dim.sanitized_sql_for(dim_or_cat)
-        dim = nil
-      end
-    end
     
     # returns an options hash to create a scope (the named_scope :olap_drilldown)
+    conditions = options.map { |dim, cat| Dimension.create(self, dim).sanitized_sql_for(cat) }
     { :select => connection.quote_table_name(table_name) + '.*', :conditions => conditions.join(' AND ') }
  
   end

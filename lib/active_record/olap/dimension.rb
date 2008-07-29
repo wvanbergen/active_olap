@@ -14,7 +14,8 @@ module ActiveRecord::OLAP
     #   - :trend      -> for a trend dimension
     #   - :field      -> for a table field dimension (similar to passing a Symbol)
     def self.create(klass, definition = nil)
-      return klass      if klass.kind_of? Dimension      
+      return klass if klass.kind_of? Dimension      
+      
       case definition
       when Dimension
         return definition

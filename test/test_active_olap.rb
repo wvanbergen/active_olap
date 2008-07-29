@@ -99,7 +99,7 @@ class ActiveRecord::OLAP::Test < Test::Unit::TestCase
     assert_equal 0, result[:period_0, 'second_cat']
     assert_equal 0, result[:period_2, 'first_cat']            
     
-    assert_equal 0, OlapTest.olap_drilldown(dimension_1, :period_4, dimension_2, 'second_cat').count
+    assert_equal 0, OlapTest.olap_drilldown(dimension_1 => :period_4, dimension_2 => 'second_cat').count
   end
   
   def test_with_three_dimensions
@@ -167,8 +167,7 @@ class ActiveRecord::OLAP::Test < Test::Unit::TestCase
   end
   
   def test_condition_field
-    dimension = :category_field
-    result = OlapTest.olap_query(dimension)
+    result = OlapTest.olap_query(:category_field)
     assert_kind_of ActiveRecord::OLAP::QueryResult, result
     assert_equal 1, result.depth
     
@@ -178,7 +177,7 @@ class ActiveRecord::OLAP::Test < Test::Unit::TestCase
     assert_equal nil, result['fourth_cat']
     assert_equal 1,   result[nil]    
     
-    assert_equal 1, OlapTest.olap_drilldown(dimension, nil).count
+    assert_equal 1, OlapTest.olap_drilldown(:category_field => nil).count
   end
   
   def test_two_dimensions
@@ -194,8 +193,8 @@ class ActiveRecord::OLAP::Test < Test::Unit::TestCase
     assert_equal 1, result[:other,:other]
     assert_equal 1, result[:other,:string_like_2]    
     
-    assert_equal 0, OlapTest.olap_drilldown(dimension_1, :datetime_field_not_set, dimension_2, :other).length
-    assert_equal 2, OlapTest.olap_drilldown(dimension_1, :datetime_field_not_set, dimension_2, :string_like_2).length
+    assert_equal 0, OlapTest.olap_drilldown(dimension_1 => :datetime_field_not_set, dimension_2 => :other).length
+    assert_equal 2, OlapTest.olap_drilldown(dimension_1 => :datetime_field_not_set, dimension_2 => :string_like_2).length
         
   end
   
@@ -234,10 +233,10 @@ class ActiveRecord::OLAP::Test < Test::Unit::TestCase
   end
   
   def test_drilldown
-    unsets = OlapTest.olap_drilldown({:categories => {:datetime_field_not_set => {:datetime_field => nil}}}, :datetime_field_not_set)
+    unsets = OlapTest.olap_drilldown({:categories => {:datetime_field_not_set => {:datetime_field => nil}}} => :datetime_field_not_set)
     assert_equal 2, unsets.length
   
-    others = OlapTest.olap_drilldown({:categories => {:datetime_field_not_set => {:datetime_field => nil}}}, :other)
+    others = OlapTest.olap_drilldown({:categories => {:datetime_field_not_set => {:datetime_field => nil}}} => :other)
     assert_equal 2, others.length  
   end
    
@@ -248,10 +247,10 @@ class ActiveRecord::OLAP::Test < Test::Unit::TestCase
     assert_equal 1, result[:datetime_field_not_set]
     assert_equal 2, result[:other]   # the other record does not fall within the scope int_field_33
       
-    unsets = OlapTest.int_field_33.olap_drilldown({:categories => {:datetime_field_not_set => {:datetime_field => nil}}}, :datetime_field_not_set)
+    unsets = OlapTest.int_field_33.olap_drilldown({:categories => {:datetime_field_not_set => {:datetime_field => nil}}} => :datetime_field_not_set)
     assert_equal 1, unsets.length
   
-    others = OlapTest.int_field_33.olap_drilldown({:categories => {:datetime_field_not_set => {:datetime_field => nil}}}, :other)
+    others = OlapTest.int_field_33.olap_drilldown({:categories => {:datetime_field_not_set => {:datetime_field => nil}}} => :other)
     assert_equal 2, others.length    
   end
   
