@@ -4,6 +4,9 @@ module ActiveRecord::OLAP
     
     attr_reader :dimension, :label, :conditions, :info  
     
+    # initializes a category, given the dimension it belongs to, a label,
+    # and a definition. The definition should be a hash with at least the
+    # key expression set to a usable ActiveRecord#find conditions
     def initialize(dimension, label, definition)
       @dimension = dimension
       @label = label
@@ -17,21 +20,22 @@ module ActiveRecord::OLAP
       end
     end
     
+    # Returns the index of this category in the corresponding dimension
     def index
       @dimension.category_index(@label)
     end
  
+    # Returns a santized SQL expression for this category
     def to_sanitized_sql
       @dimension.klass.send(:sanitize_sql, @conditions)
     end
  
+    # Returns the label of this category as a string
     def to_s
-      label
+      return "nil" if label.nil?
+      label.to_s
     end
     
-    def inspect
-      "OLAP::Category(#{@label.inspect}, #{@conditions.inspect})"
-    end
   end
   
 end

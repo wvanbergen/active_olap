@@ -1,15 +1,24 @@
 require "#{File.dirname(__FILE__)}/test_helper"
 
 class OlapTest < ActiveRecord::Base  
+  
   named_scope :int_field_33, :conditions => {:int_field => 33}
   
   enable_active_olap do |olap|
-    olap.dimension :category, :categories => {
-          :first_cat   => { :category_field => 'first_cat'  },
-          :second_cat  => { :category_field => 'second_cat' },
-          :third_cat   => { :category_field => 'third_cat'  },
-          :no_category => { :category_field => nil }
-        }
+    
+    olap.dimension :category, :categories => [
+          [:first_cat,   { :category_field => 'first_cat' }],
+          [:second_cat,  { :category_field => 'second_cat' }],
+          [:third_cat,   { :category_field => 'third_cat' }],
+          [:no_category, { :category_field => nil }] 
+        ]
+        
+    olap.dimension :my_trend, lambda { {:trend => {
+          :timestamp_field => :datetime_field,
+          :period_count    => 20,
+          :period_length   => 1.day,
+          :trend_end       => Time.now.midnight
+        } } }
   end
   
 end
@@ -49,6 +58,21 @@ class ActiveRecord::OLAP::Test < Test::Unit::TestCase
   end
   
   # --- TESTS ---------------------------------
+
+  def test_config_with_lambda_trend_and_transpose
+    
+    result = OlapTest.olap_query(:category, :my_trend)
+    assert_equal 5, result.breadth # 4 + other
+    assert_equal 2, result.depth
+    assert_equal :first_cat, result.dimension.categories.first.label
+    
+    #switch the dimensions sing transpose
+    result = result.transpose
+    
+    assert_equal 20, result.breadth # 20 periods
+    assert_equal 2, result.depth
+    
+  end  
 
   def test_with_config
     result = OlapTest.olap_query(:category)

@@ -16,17 +16,23 @@ module ActiveRecord::OLAP
       end
     end
     
+    def dimension 
+      @dimensions.first
+    end
+    
     def depth
       @dimensions.length
     end
     
-    def inspect
-      @result.inspect
+    def breadth
+      @result.length
     end
-    
-    def transposed_result
-      raise "Can only transpose a result with two dimensions" unless depth == 2
-      @result.transpose
+        
+    def transpose
+      raise "Can only transpose 2-dimensial results" unless depth == 2
+      result_object = QueryResult.new(@klass, [@dimensions.last, @dimensions.first])
+      result_object.result = @result.transpose
+      return result_object      
     end
     
     def [](*args)
