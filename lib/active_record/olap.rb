@@ -1,8 +1,19 @@
 module ActiveRecord::OLAP
   
-  def enable_active_olap
+  def enable_active_olap(config = nil, &block)
+
     self.class_eval { extend ClassMethods }
-    self.named_scope :olap_drilldown, lambda { |*args| self.olap_drilldown_finder_options(args) }
+    self.named_scope :olap_drilldown, lambda { |*args| self.olap_drilldown_finder_options(args) }    
+    
+    self.cattr_accessor :active_olap_dimensions, :active_olap_aggregates
+    self.active_olap_dimensions = {}
+    self.active_olap_aggregates = {}    
+    
+    if config.nil? && block_given?
+      conf = Configurator.new(self)
+      yield(conf) 
+    end
+    
   end
   
   

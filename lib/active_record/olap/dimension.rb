@@ -7,8 +7,18 @@ module ActiveRecord::OLAP
 
     def self.create(klass, definition = nil)
       return klass      if klass.kind_of? Dimension      
-      return definition if definition.kind_of? Dimension            
-      return Dimension.new(klass, definition)
+      case definition
+      when Dimension
+        return definition
+      when Symbol
+        if klass.active_olap_dimensions.has_key?(definition)
+          return Dimension.new(klass, klass.active_olap_dimensions[definition])
+        else
+          return Dimension.new(klass, definition)        
+        end
+      else
+        return Dimension.new(klass, definition)
+      end
     end
 
     def to_aggregate_expression
@@ -103,14 +113,16 @@ module ActiveRecord::OLAP
     end
     
     def generate_field_dimension(field)
-      # TODO: check whether this is an existing field        
       case field
       when Hash
         @category_field = field[:column].to_sym
       else  
         @category_field = field.to_sym        
       end
-
+      
+      unless @klass.column_names.include?(@category_field.to_s)
+        raise "Could not create dimension for unknown field #{@category_field}" 
+      end
     end
     
     def generate_custom_categories(categories)

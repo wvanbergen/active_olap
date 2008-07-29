@@ -3,7 +3,14 @@ require "#{File.dirname(__FILE__)}/test_helper"
 class OlapTest < ActiveRecord::Base  
   named_scope :int_field_33, :conditions => {:int_field => 33}
   
-  enable_active_olap
+  enable_active_olap do |olap|
+    olap.dimension :category, :categories => {
+          :first_cat   => { :category_field => 'first_cat'  },
+          :second_cat  => { :category_field => 'second_cat' },
+          :third_cat   => { :category_field => 'third_cat'  },
+          :no_category => { :category_field => nil }
+        }
+  end
   
 end
 
@@ -42,6 +49,15 @@ class ActiveRecord::OLAP::Test < Test::Unit::TestCase
   end
   
   # --- TESTS ---------------------------------
+
+  def test_with_config
+    result = OlapTest.olap_query(:category)
+    assert_equal 1,   result[:first_cat]
+    assert_equal 2,   result[:second_cat]
+    assert_equal 0,   result[:third_cat]
+    assert_equal nil, result[:fourth_cat]
+    assert_equal 1,   result[:no_category]
+  end
 
 
   def test_with_periods
