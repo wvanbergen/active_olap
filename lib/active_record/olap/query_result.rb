@@ -24,6 +24,10 @@ module ActiveRecord::OLAP
       @dimensions.length
     end
     
+    def categories 
+      @dimensions.first.categories
+    end
+    
     def breadth
       @result.length
     end
