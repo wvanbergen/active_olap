@@ -52,16 +52,16 @@ class ActiveRecord::OLAP::Test < Test::Unit::TestCase
     assert_kind_of ActiveRecord::OLAP::QueryResult, result
     assert_equal 2, result.depth
     
-    assert_equal 1, result[:period_4]['first_cat']
-    assert_equal 0, result[:period_4]['second_cat']        
-    assert_equal 0, result[:period_2]['first_cat']        
-    assert_equal 1, result[:period_2]['second_cat']    
-    assert_equal 0, result[:period_1]['second_cat']
-    assert_equal 0, result[:period_3]['first_cat']            
+    assert_equal 1, result[:period_3, 'first_cat']
+    assert_equal 0, result[:period_3, 'second_cat']        
+    assert_equal 0, result[:period_1, 'first_cat']        
+    assert_equal 1, result[:period_1, 'second_cat']    
+    assert_equal 0, result[:period_0, 'second_cat']
+    assert_equal 0, result[:period_2, 'first_cat']            
     
     assert_equal 0, OlapTest.olap_drilldown(dimension_1, :period_4, dimension_2, 'second_cat').count
   end
-
+  
   def test_with_three_dimensions
     dimension_1 = { :categories => { :datetime_field_set => 'datetime_field IS NOT NULL' } }
     dimension_2 = :category_field   
@@ -72,18 +72,33 @@ class ActiveRecord::OLAP::Test < Test::Unit::TestCase
     assert_equal 3, result.depth
     
     # check that every value is set
-    assert_equal 1, result[:datetime_field_set]['first_cat'][:string_like_2]
-    assert_equal 0, result[:datetime_field_set]['first_cat'][:other]
-    assert_equal 0, result[:datetime_field_set]['second_cat'][:string_like_2]
-    assert_equal 1, result[:datetime_field_set]['second_cat'][:other]
-    assert_equal 0, result[:datetime_field_set][nil][:string_like_2]
-    assert_equal 0, result[:datetime_field_set][nil][:other]
-    assert_equal 0, result[:other]['first_cat'][:string_like_2]
-    assert_equal 0, result[:other]['first_cat'][:other]
-    assert_equal 1, result[:other]['second_cat'][:string_like_2]
-    assert_equal 0, result[:other]['second_cat'][:other]    
-    assert_equal 1, result[:other][nil][:string_like_2]
-    assert_equal 0, result[:other][nil][:other]    
+    assert_equal 1, result[:datetime_field_set, 'first_cat',:string_like_2]
+    assert_equal 0, result[:datetime_field_set, 'first_cat',:other]
+    assert_equal 0, result[:datetime_field_set, 'second_cat',:string_like_2]
+    assert_equal 1, result[:datetime_field_set, 'second_cat',:other]
+    assert_equal 0, result[:datetime_field_set, nil,:string_like_2]
+    assert_equal 0, result[:datetime_field_set, nil,:other]
+    assert_equal 0, result[:other, 'first_cat',:string_like_2]
+    assert_equal 0, result[:other, 'first_cat',:other]
+    assert_equal 1, result[:other, 'second_cat',:string_like_2]
+    assert_equal 0, result[:other, 'second_cat',:other]    
+    assert_equal 1, result[:other, nil,:string_like_2]
+    assert_equal 0, result[:other, nil,:other]    
+    
+    intermediate_result = result[:other]
+    assert_kind_of ActiveRecord::OLAP::QueryResult, intermediate_result
+    assert_equal 2, intermediate_result.depth
+    assert_kind_of ActiveRecord::OLAP::QueryResult, result[:other, 'second_cat']
+    assert_kind_of ActiveRecord::OLAP::QueryResult, result[:other]['second_cat']
+    assert 1, intermediate_result['second_cat'][:string_like_2]
+    assert 1, result[:other, 'second_cat'][:string_like_2]    
+    
+    found_categories = []
+    intermediate_result.each do |category, res|
+      assert_kind_of ActiveRecord::OLAP::QueryResult, res
+      found_categories << category.label
+    end
+    assert_equal ['first_cat', 'second_cat', nil], found_categories
   end
   
   def test_condition_field_with_two_dimensions
@@ -93,20 +108,22 @@ class ActiveRecord::OLAP::Test < Test::Unit::TestCase
     result = OlapTest.olap_query(dimension_1, dimension_2)
     assert_kind_of ActiveRecord::OLAP::QueryResult, result
     assert_equal 2, result.depth
-    
-    assert_equal 1, result[:datetime_field_set]['first_cat']
-    assert_equal 1, result[:datetime_field_set]['second_cat']
-    assert_equal 1, result[:other]['second_cat']    
-    assert_equal 1, result[:other][nil]
-    
+  
+    assert_equal 1, result[:datetime_field_set, 'first_cat']
+    assert_equal 1, result[:datetime_field_set, 'second_cat']
+    assert_equal 0, result[:datetime_field_set, nil]    
+    assert_equal 0, result[:other, 'first_cat']    
+    assert_equal 1, result[:other, 'second_cat']    
+    assert_equal 1, result[:other, nil]
+  
     result = OlapTest.olap_query(dimension_2, dimension_1)
     assert_kind_of ActiveRecord::OLAP::QueryResult, result
     assert_equal 2, result.depth
   
-    assert_equal 1, result['first_cat'][:datetime_field_set]
-    assert_equal 1, result['second_cat'][:datetime_field_set]
-    assert_equal 1, result['second_cat'][:other]
-    assert_equal 1, result[nil][:other]
+    assert_equal 1, result['first_cat', :datetime_field_set]
+    assert_equal 1, result['second_cat', :datetime_field_set]
+    assert_equal 1, result['second_cat', :other]
+    assert_equal 1, result[nil, :other]
   end
   
   def test_condition_field
@@ -132,10 +149,10 @@ class ActiveRecord::OLAP::Test < Test::Unit::TestCase
     assert_kind_of ActiveRecord::OLAP::QueryResult, result
     assert_equal 2, result.depth
     
-    assert_equal 0, result[:datetime_field_not_set][:other]
-    assert_equal 2, result[:datetime_field_not_set][:string_like_2]    
-    assert_equal 1, result[:other][:other]
-    assert_equal 1, result[:other][:string_like_2]    
+    assert_equal 0, result[:datetime_field_not_set,:other]
+    assert_equal 2, result[:datetime_field_not_set,:string_like_2]    
+    assert_equal 1, result[:other,:other]
+    assert_equal 1, result[:other,:string_like_2]    
     
     assert_equal 0, OlapTest.olap_drilldown(dimension_1, :datetime_field_not_set, dimension_2, :other).length
     assert_equal 2, OlapTest.olap_drilldown(dimension_1, :datetime_field_not_set, dimension_2, :string_like_2).length
@@ -151,8 +168,8 @@ class ActiveRecord::OLAP::Test < Test::Unit::TestCase
     assert_equal 2, result.depth
     
     assert_nil result[:other]
-    assert_nil result[:datetime_field_not_set][:other]
-    assert_equal 2, result[:datetime_field_not_set][:string_like_2]
+    assert_nil result[:datetime_field_not_set,:other]
+    assert_equal 2, result[:datetime_field_not_set,:string_like_2]
     
   end  
   
@@ -166,6 +183,14 @@ class ActiveRecord::OLAP::Test < Test::Unit::TestCase
     assert_kind_of ActiveRecord::OLAP::QueryResult, result
     assert_equal 3, result[:string_like_2]
     assert_equal 1, result[:other]    
+    
+    found_categories = []
+    result.each do |category, res|
+      assert_kind_of Numeric, res
+      found_categories << category.label
+    end
+    # cassert the correct order for the categories
+    assert_equal [:string_like_2, :other], found_categories
   end
   
   def test_drilldown
@@ -195,11 +220,11 @@ class ActiveRecord::OLAP::Test < Test::Unit::TestCase
   def test_other_condition
     dimension = ActiveRecord::OLAP::Dimension.create(OlapTest, :categories => { :datetime_field_set => {:datetime_field => nil}})
     assert_kind_of ActiveRecord::OLAP::Dimension, dimension
-    assert_equal '((("olap_tests"."datetime_field" IS NULL)) IS NULL OR NOT(("olap_tests"."datetime_field" IS NULL)))', dimension[:other][:expression]
+    assert_equal '((("olap_tests"."datetime_field" IS NULL)) IS NULL OR NOT(("olap_tests"."datetime_field" IS NULL)))', dimension[:other].to_sanitized_sql
     
     dimension = { :categories => { :datetime_field_set => {:datetime_field => nil} } }
     dimension = ActiveRecord::OLAP::Dimension.create(OlapTest, dimension)
-    assert_kind_of String, dimension[:other][:expression]
+    assert_kind_of String, dimension[:other].conditions
     
     dimension = { :categories => { :other => false, :datetime_field_set => {:datetime_field => nil} } }
     dimension = ActiveRecord::OLAP::Dimension.create(OlapTest, dimension)
@@ -209,9 +234,9 @@ class ActiveRecord::OLAP::Test < Test::Unit::TestCase
     dimension = ActiveRecord::OLAP::Dimension.create(OlapTest, dimension)
     assert_nil dimension[:other]
     
-    dimension = { :categories => { :other => ['willem = ?', 'great'], :datetime_field_set => {:datetime_field => nil} } }
+    dimension = { :categories => { :other => ['willem = ?', "grea't"], :datetime_field_set => {:datetime_field => nil} } }
     dimension = ActiveRecord::OLAP::Dimension.create(OlapTest, dimension)
-    assert_kind_of Array, dimension[:other][:expression]
-    assert_equal ["willem = ?", 'great'], dimension[:other][:expression]
+    assert_equal ["willem = ?", "grea't"], dimension[:other].conditions
+    assert_equal "willem = 'grea''t'", dimension[:other].to_sanitized_sql
   end
 end

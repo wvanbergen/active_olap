@@ -12,8 +12,8 @@ module ActiveRecord::OLAP
     end
 
     def to_aggregate_expression
-      sql_fragments = @categories.map do |category, cat_info|
-        "SUM(#{@klass.send(:sanitize_sql, cat_info[:expression])}) AS #{@klass.connection.send(:quote_column_name, category)}"
+      sql_fragments = @categories.map do |category|
+        "SUM(#{category.to_sanitized_sql}) AS #{@klass.connection.send(:quote_column_name, category.label.to_s)}"
       end
       return sql_fragments.join(', ')
     end
@@ -22,99 +22,107 @@ module ActiveRecord::OLAP
       if @category_field
         "#{@klass.connection.send(:quote_column_name, @category_field)} AS #{@klass.connection.send(:quote_column_name, variable_name)}"
       else
-        "#{generate_groupable_case_expession(@categories.clone)} AS #{@klass.connection.send(:quote_column_name, variable_name)}"
+        whens = @categories.map { |category| @klass.send(:sanitize_sql, ["WHEN (#{category.to_sanitized_sql}) THEN ?", category.label.to_s]) }
+        "CASE #{whens.join(' ')} ELSE NULL END AS #{@klass.connection.send(:quote_column_name, variable_name)}";
       end
     end
 
-    def condition_for(cat)
-      if @category_field
-        { @category_field => cat }
-      else 
-        "(#{@klass.send(:sanitize_sql, self[cat][:expression])})"
+    def register_category(cat_label, definition = nil)
+      puts "Checking for category: #{cat_label.inspect}"
+      unless has_category?(cat_label)
+        puts "#{cat_label.inspect} not found, registering..."
+        definition = {:expression => { @category_field => cat_label }} if definition.nil? && @category_field
+        cat = Category.new(self, cat_label, definition)
+        @categories << cat
+        return (@categories.length - 1)
+      else
+        puts "Reusing #{cat_label.inspect}..."
+        return category_index(cat_label)
       end
     end
-
-    def register_category(cat)
-      @categories << [cat, {:expression => {@category_field => cat}}] # unless has_category?(cat)
-    end
-
-    def find_category(cat)
-      c = @categories.detect { |cat_info| cat_info.first == cat }
-      c = c.last unless c.nil?
-      return c
+    
+    def [](label)
+      @categories.detect { |cat| cat.label == label }
     end
     
-    def [](cat)
-      find_category(cat)
+    def category_labels 
+      @categories.map(&:label)
+    end
+        
+    def has_category?(label)
+      @categories.any? { |cat| cat.label == label }
     end
     
-    def is_field?
+    def category_index(label)
+      @categories.each_with_index { |cat, index| return index if cat.label == label }
+      return nil
+    end
+    
+    def category_by_index(index)
+      @categories[index]
+    end
+    
+    def is_field_dimension?
       !@category_field.nil?
     end
     
-    def has_category?(cat)
-      !find_category(cat).nil?
-    end
-
-    protected
-
-    # mysql only?
-    def generate_groupable_if_expession(categories)
-      category = categories.shift # pop?
-      if categories.length > 0
-        sql = @klass.send(:sanitize_sql, ["IF(#{@klass.send(:sanitize_sql, category.last[:expression])}), (#{generate_groupable_if_expession(categories)}), ?)", category.first.to_s])
-      else
-        sql = @klass.send(:sanitize_sql, ["IF(#{@klass.send(:sanitize_sql, category.last[:expression])}), ?, NULL)", category.first.to_s])
-      end
-      return sql
-    end
-
-    def generate_groupable_case_expession(categories)
-      whens = categories.map { |category| @klass.send(:sanitize_sql, ["WHEN (#{@klass.send(:sanitize_sql, category.last[:expression])}) THEN ?", category.first.to_s]) }
-      return "CASE #{whens.join(' ')} ELSE NULL END";
+    def sanitized_sql_for(cat)
+      is_field_dimension? ? @klass.send(:sanitize_sql, { @category_field => cat }) : self[cat].to_sanitized_sql
     end
     
-   
+    protected
     
     def generate_other_condition
-      all_categories = @categories.map { |category| "(#{@klass.send(:sanitize_sql, category.last[:expression])})" }.join(' OR ') 
+      all_categories = @categories.map { |category| "(#{category.to_sanitized_sql})" }.join(' OR ') 
       "((#{all_categories}) IS NULL OR NOT(#{all_categories}))"
     end    
 
     def initialize(klass, definition)
       @klass = klass
       @categories = []
-
-      if definition.kind_of?(Hash)
+      
+      case definition
+      when Hash
         
         if definition.has_key?(:categories)
-          
-          skip_other = false
-          definition[:categories].each do |key, value|
-            skip_other = true if key == :other             
-            if value 
-              @categories << (value.kind_of?(Hash) && value.has_key?(:expression) ? [key, value] : [key, {:expression => value}])
-            end
-          end
-          @categories << [:other, {:expression => generate_other_condition }] unless skip_other
+          generate_custom_categories(definition[:categories])
           
         elsif definition.has_key?(:trend)
-          
-          @categories = generate_trend_categories(definition[:trend])
+          generate_trend_categories(definition[:trend])
           
         elsif definition.has_key?(:field)
-          
-          # TODO: check whether this is an existing field
-          @category_field = definition[:field]
+          generate_field_dimension(definition[:field])
+
         else
           raise "Invalid category definition! " + definition.inspect          
         end
-      elsif definition.kind_of?(Symbol)
-        # TODO: check whether this is an existing field
-        @category_field = definition
+        
+      when Symbol
+        generate_field_dimension(definition)
+        
       else
         raise "Invalid category definition! " + definition.inspect
       end      
+    end
+    
+    def generate_field_dimension(field)
+      # TODO: check whether this is an existing field        
+      case field
+      when Hash
+        @category_field = field[:column].to_sym
+      else  
+        @category_field = field.to_sym        
+      end
+
+    end
+    
+    def generate_custom_categories(categories)
+      skip_other = false
+      categories.each do |key, value|
+        skip_other = true if key == :other
+        register_category(key, value) if value
+      end
+      register_category(:other, :expression => generate_other_condition) unless skip_other
     end
     
     def generate_trend_categories(trend_definition)
@@ -125,13 +133,12 @@ module ActiveRecord::OLAP
       
       field = @klass.connection.send :quote_column_name, timestamp_field
       periods = Array.new(period_count)
-      period_end = trend_end
-      period_count.downto(1) do |i|
-        periods[i - 1] = ["period_#{i}".to_sym, {:begin => period_end - period_length, :end  => period_end,
-            :expression => ["#{field} >= ? AND #{field} < ?", period_end - period_length, period_end] }]
-        period_end  -= period_length
+      period_begin = trend_end - (period_count * period_length)
+      period_count.times do |i|
+        register_category("period_#{i}".to_sym, {:begin => period_begin, :end => period_begin + period_length,
+                      :expression => ["#{field} >= ? AND #{field} < ?", period_begin, period_begin + period_length] })
+        period_begin  += period_length
       end
-
       return periods
     end    
   end
