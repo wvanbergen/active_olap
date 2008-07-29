@@ -28,15 +28,12 @@ module ActiveRecord::OLAP
     end
 
     def register_category(cat_label, definition = nil)
-      puts "Checking for category: #{cat_label.inspect}"
       unless has_category?(cat_label)
-        puts "#{cat_label.inspect} not found, registering..."
         definition = {:expression => { @category_field => cat_label }} if definition.nil? && @category_field
         cat = Category.new(self, cat_label, definition)
         @categories << cat
         return (@categories.length - 1)
       else
-        puts "Reusing #{cat_label.inspect}..."
         return category_index(cat_label)
       end
     end

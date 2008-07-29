@@ -24,7 +24,10 @@ module ActiveRecord::OLAP
     def to_sanitized_sql
       @dimension.klass.send(:sanitize_sql, @conditions)
     end
-    
+ 
+    def to_s
+      label
+    end
     
     def inspect
       "OLAP::Category(#{@label.inspect}, #{@conditions.inspect})"
