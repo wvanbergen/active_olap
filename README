@@ -3,11 +3,59 @@ Active OLAP
 
 This Rails plugin makes it easy to add an OLAP interface to your application, which is 
 great for administration interfaces. Its main uses are collection information about the
-usage of your application and detecting inconsistencies and problems in your data.
+usage of your application and detecting inconsistencies and problems in your data. It does
+so by counting records in the table that conform the provided category definitions
 
-This plugin is developed for the Floorplanner.com website. It is currently being cleaned
-up for public release. It will be BSD-licensed, so you can use it for any purpose you 
-see fit.
+This plugin is developed for the Floorplanner.com website, but is usable for any 
+ActiveRecord based model. Because named_scope is used for the implementation,
+Rails 2.1 is required for this to work.
 
+An example to show how this plugin works:
+-------------------------------------------------------------------------------------------
+
+class MyModel < ActiveRecord::Base
+	enable_active_olap
+	
+	# fields :published_at, :category_field, :price
+end
+
+# Define a category by simply passing a field to use for categorization
+
+@result = MyModel.olap_query(:category_field)
+@result.each { |category, value| puts "#{category.label}: #{value}" }
+
+# Use olap_drilldown drilldown to get the actual records
+# - The olap_drilldown method is actually a named scope, so you can use it in any way
+#    as you use other named scopes
+
+@result.olap_drilldown(:category_field, 'some_value').each { |my_model| ... }
+
+# Define your own categories
+# - An "other" category automagically added, which in this case will be unpublished 
+#   MyModels ("published_at IS NULL"). This is a great feature to detect data problems 
+#   in your dataset. Omit the other category by passing :other => false als category
+
+published_dimension = { :categories => { 
+					:published_recently => ['published_at >= ?', 1.month.ago],
+					:published_long_ago => ['published_at < ?',  1.month.ago]
+			} }
+					
+@result = MyModel.olap_query(published_dimension)
+puts "Recently published: "   + @result[:published_recently]
+puts "Published longer ago: " + @result[:published_long_ago]
+puts "Not published: "        + @result[:other]              
+
+# Use multiple dimensions like this
+@result = MyModel.olap_query(published_dimension, :category_field)
+puts @result[:published_recently]['some_value']
+@result[:other].each do |category, value|
+	puts "#{category.label}: #{value}"
+end
+
+# And use drilldown as well with multiple dimensions
+@records = MyModel.olap_drilldown(published_dimension, :published_long_ago, :category_field, 'some_value')
+# -> SELECT * FROM my_models WHERE published_at < '2008-06-28 10:23:45' AND category_field = 'some_value'
+
+-------------------------------------------------------------------------------------------
 For some information about this plugin, see the Floorplanner techblog:
 http://techblog.floorplanner.com/tag/active_olap/
