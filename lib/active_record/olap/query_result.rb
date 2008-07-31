@@ -16,6 +16,12 @@ module ActiveRecord::OLAP
       end
     end
     
+    def sum
+      total_sum = 0
+      self.each { |cat, value| total_sum += (value.kind_of?(QueryResult) ? value.sum : value) }
+      return total_sum
+    end
+    
     def to_a
       @result
     end

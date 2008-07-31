@@ -59,6 +59,14 @@ class ActiveRecord::OLAP::Test < Test::Unit::TestCase
   
   # --- TESTS ---------------------------------
 
+  def test_conditions
+    result = OlapTest.olap_query(:field => :category_field, :conditions => {:datetime_field => nil})
+    assert_equal 1, result.depth
+    assert_equal 2, result.sum
+    
+    assert_equal 1, OlapTest.olap_drilldown({:field => :category_field, :conditions => {:datetime_field => nil}} => 'second_cat').count
+  end
+
   def test_config_with_lambda_trend_and_transpose
     
     result = OlapTest.olap_query(:category, :my_trend)
@@ -73,7 +81,7 @@ class ActiveRecord::OLAP::Test < Test::Unit::TestCase
     assert_equal 2, result.depth
     
   end  
-
+  
   def test_with_config
     result = OlapTest.olap_query(:category)
     assert_equal 1,   result[:first_cat]
@@ -82,8 +90,8 @@ class ActiveRecord::OLAP::Test < Test::Unit::TestCase
     assert_equal nil, result[:fourth_cat]
     assert_equal 1,   result[:no_category]
   end
-
-
+  
+  
   def test_with_periods
     dimension_1 = { :trend => { :timestamp_field => :datetime_field, :period_count => 5}}
     dimension_2 = :category_field

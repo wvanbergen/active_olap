@@ -13,7 +13,7 @@ module ActiveRecord::OLAP
     #   - :categories -> for custom categories
     #   - :trend      -> for a trend dimension
     #   - :field      -> for a table field dimension (similar to passing a Symbol)
-    def self.create(klass, definition = nil)
+    def self.create(klass, definition = nil, scope = nil)
       return klass if klass.kind_of? Dimension      
       
       case definition
@@ -22,15 +22,15 @@ module ActiveRecord::OLAP
       when Symbol
         if klass.active_olap_dimensions.has_key?(definition)
           if klass.active_olap_dimensions[definition].respond_to?(:call)
-            return Dimension.new(klass, klass.active_olap_dimensions[definition].call)
+            return Dimension.new(klass, klass.active_olap_dimensions[definition].call, scope)
           else
-            return Dimension.new(klass, klass.active_olap_dimensions[definition])
+            return Dimension.new(klass, klass.active_olap_dimensions[definition], scope)
           end
         else
-          return Dimension.new(klass, definition)        
+          return Dimension.new(klass, definition, scope)        
         end
       else
-        return Dimension.new(klass, definition)
+        return Dimension.new(klass, definition, scope)
       end
     end
 
@@ -117,6 +117,10 @@ module ActiveRecord::OLAP
     
     protected
     
+    def update_scope
+      
+    end
+    
     # Generates an SQL expression for the :other-category
     def generate_other_condition
       all_categories = @categories.map { |category| "(#{category.to_sanitized_sql})" }.join(' OR ') 
@@ -124,19 +128,20 @@ module ActiveRecord::OLAP
     end    
 
     # Initializes a new Dimension object. See Dimension#create
-    def initialize(klass, definition)
+    def initialize(klass, definition, scope_conditions = nil)
       @klass = klass
       @categories = []
       @is_trend = false
       
       case definition
       when Hash
+        scope_conditions << definition[:conditions] if scope_conditions.kind_of?(Array) && definition.has_key?(:conditions)
         
         if definition.has_key?(:categories)
           generate_custom_categories(definition[:categories])
           
         elsif definition.has_key?(:trend)
-          generate_trend_categories(definition[:trend])
+          generate_trend_categories(definition[:trend], scope_conditions)
           
         elsif definition.has_key?(:field)
           generate_field_dimension(definition[:field])
@@ -175,7 +180,7 @@ module ActiveRecord::OLAP
       register_category(:other, :expression => generate_other_condition) unless skip_other
     end
     
-    def generate_trend_categories(trend_definition)
+    def generate_trend_categories(trend_definition, scope_conditions = nil)
       @is_trend = true
       
       period_count     = trend_definition.delete(:period_count)    || 14
@@ -196,6 +201,9 @@ module ActiveRecord::OLAP
                       :expression => ["#{field} >= ? AND #{field} < ?", period_begin, period_begin + period_length] })
         period_begin  += period_length
       end
+      
+      scope_conditions << ["#{field} >= ? AND #{field} < ?", trend_begin, period_begin]
+      
     end    
   end
 end
