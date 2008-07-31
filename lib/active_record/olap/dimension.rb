@@ -181,17 +181,21 @@ module ActiveRecord::OLAP
       period_count     = trend_definition.delete(:period_count)    || 14
       period_length    = trend_definition.delete(:period_length)   || 1.days
       trend_end        = trend_definition.delete(:end)             || Time.now.utc.midnight
+      trend_begin      = trend_definition.delete(:begin)
       timestamp_field  = trend_definition.delete(:timestamp_field)
       
+      if !trend_end.nil? && trend_begin.nil?
+        trend_begin = trend_end - (period_count * period_length)
+      end
+      
+      
       field = @klass.connection.send :quote_column_name, timestamp_field
-      periods = Array.new(period_count)
-      period_begin = trend_end - (period_count * period_length)
+      period_begin = trend_begin
       period_count.times do |i|
         register_category("period_#{i}".to_sym, {:begin => period_begin, :end => period_begin + period_length,
                       :expression => ["#{field} >= ? AND #{field} < ?", period_begin, period_begin + period_length] })
         period_begin  += period_length
       end
-      return periods
     end    
   end
 end
