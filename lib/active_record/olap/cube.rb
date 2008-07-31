@@ -1,5 +1,5 @@
 module ActiveRecord::OLAP
-  class QueryResult
+  class Cube
     
     attr_accessor :klass
     attr_accessor :dimensions
@@ -18,7 +18,7 @@ module ActiveRecord::OLAP
     
     def sum
       total_sum = 0
-      self.each { |cat, value| total_sum += (value.kind_of?(QueryResult) ? value.sum : value) }
+      self.each { |cat, value| total_sum += (value.kind_of?(Cube) ? value.sum : value) }
       return total_sum
     end
     
@@ -48,7 +48,7 @@ module ActiveRecord::OLAP
         
     def transpose
       raise "Can only transpose 2-dimensial results" unless depth == 2
-      result_object = QueryResult.new(@klass, [@dimensions.last, @dimensions.first])
+      result_object = Cube.new(@klass, [@dimensions.last, @dimensions.first])
       result_object.result = @result.transpose
       return result_object      
     end
@@ -63,7 +63,7 @@ module ActiveRecord::OLAP
       
       if result.kind_of?(Array)
         # build a new query_result object if not enoug dimensions were provided
-        result_object = QueryResult.new(@klass, @dimensions[args.length...@dimensions.length])
+        result_object = Cube.new(@klass, @dimensions[args.length...@dimensions.length])
         result_object.result = result
         return result_object
       else
@@ -88,6 +88,7 @@ module ActiveRecord::OLAP
     end
 
     def populate_result_with(query_result)
+      # walks all the rows of the resultset to build the result cube
       query_result.each do |row|
         
         result = @result

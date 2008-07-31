@@ -53,7 +53,7 @@ module ActiveRecord::OLAP
       # TODO: joins, having
       query_result = self.scoped(:conditions => conditions).find(:all, :select => selects.join(', '), :group => group_clause, :order => group_clause)  
 
-      return QueryResult.new(self, dimensions, query_result)
+      return Cube.new(self, dimensions, query_result)
     end   
   end
   
