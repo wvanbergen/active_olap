@@ -16,6 +16,14 @@ module ActiveRecord::OLAP
       end
     end
     
+    def to_a
+      @result
+    end
+    
+    def categories
+      @dimensions.first.categories
+    end
+    
     def dimension 
       @dimensions.first
     end
@@ -58,9 +66,13 @@ module ActiveRecord::OLAP
     end
     
     def each(&block)
-      @dimensions.first.categories.length.times do |i|
-        yield(@dimensions.first.categories[i], self[@dimensions.first.categories[i].label])
-      end
+     categories.each { |cat| yield(cat, self[cat.label]) }
+    end
+    
+    def map(&block)
+      result = []
+      categories.each { |cat| result << yield(cat, self[cat.label]) }
+      return result
     end
     
     protected
