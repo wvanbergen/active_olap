@@ -23,24 +23,27 @@ module ActiveRecord::OLAP
     # It can be used for multiple dimensions 
     # It expects a list of category definitions
     def olap_query(*dimensions)
+
+      if dimensions.last.kind_of?(Hash) && dimensions.last.has_key?(:aggregate)
+        aggregates = Aggregate.all_from_olap_query_call(self, dimensions.pop[:aggregate])
+      else
+        aggregates = [Aggregate.create(self, :the_olap_count_field, :count_distinct)]
+      end
+      
       raise "You have to provide at least one dimension for an OLAP query" if dimensions.length == 0    
       
       scope_conditions = []
       dimensions = dimensions.collect { |d| Dimension.create(self, d, scope_conditions) }
       conditions = self.send(:merge_conditions, *scope_conditions)
 
-      selects = []
+      selects = aggregates.map { |agg| agg.to_sanitized_sql }
       groups  = []
 
-      if dimensions.last.is_field_dimension? # || is_custom_aggregrate?
-        # is this a good constant expression?
-        # TODO: other/multiple aggregates
-        selects << "COUNT(DISTINCT #{connection.quote_table_name(table_name)}.id) AS the_olap_count_field"
-        dimensions_to_group = dimensions.clone        
+      if aggregates.length > 0
+        dimensions_to_group = dimensions.clone
       else 
         selects << dimensions.last.to_aggregate_expression
         dimensions_to_group = dimensions[0, dimensions.length - 1]
-
       end
       
       dimensions_to_group.each_with_index do |d, index|
@@ -48,12 +51,12 @@ module ActiveRecord::OLAP
         groups  << self.connection.quote_column_name(var_name)
         selects << d.to_group_expression(var_name)
       end
-      
+    
       group_clause = groups.length > 0 ? groups.join(', ') : nil
       # TODO: joins, having
       query_result = self.scoped(:conditions => conditions).find(:all, :select => selects.join(', '), :group => group_clause, :order => group_clause)  
 
-      return Cube.new(self, dimensions, query_result)
+      return Cube.new(self, dimensions, aggregates, query_result)
     end   
   end
   

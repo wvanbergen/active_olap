@@ -3,12 +3,13 @@ module ActiveRecord::OLAP
     
     attr_accessor :klass
     attr_accessor :dimensions
-    attr_accessor :result
+    attr_accessor :aggregates
     
-    def initialize(klass, dimensions, query_result = nil)
+    def initialize(klass, dimensions, aggregates, query_result = nil)
       @klass      = klass
       @dimensions = dimensions
-
+      @aggregates = aggregates
+      
       unless query_result.nil?
         @result = []        
         populate_result_with(query_result)
@@ -20,6 +21,10 @@ module ActiveRecord::OLAP
       total_sum = 0
       self.each { |cat, value| total_sum += (value.kind_of?(Cube) ? value.sum : value) }
       return total_sum
+    end
+    
+    def raw_result 
+      @result
     end
     
     def to_a
@@ -48,9 +53,17 @@ module ActiveRecord::OLAP
         
     def transpose
       raise "Can only transpose 2-dimensial results" unless depth == 2
-      result_object = Cube.new(@klass, [@dimensions.last, @dimensions.first])
+      result_object = Cube.new(@klass, [@dimensions.last, @dimensions.first], @aggregates)
       result_object.result = @result.transpose
       return result_object      
+    end
+    
+    def reorder_dimensions(*order)
+      # IMPLEMENT ME      
+    end
+    
+    def only(aggregate_label)
+      # IMPLEMENT ME
     end
     
     def [](*args)
@@ -63,7 +76,7 @@ module ActiveRecord::OLAP
       
       if result.kind_of?(Array)
         # build a new query_result object if not enoug dimensions were provided
-        result_object = Cube.new(@klass, @dimensions[args.length...@dimensions.length])
+        result_object = Cube.new(@klass, @dimensions[args.length...@dimensions.length], @aggregates)
         result_object.result = result
         return result_object
       else
@@ -125,15 +138,20 @@ module ActiveRecord::OLAP
             # the last dimension is a field category.
             # every category is represented as a single row, with only one count per row
             dimension_field_value = values["dimension_#{@dimensions.length - 1}"]
-            result[dim.register_category(dimension_field_value)] = values['the_olap_count_field'].to_i
+            result[dim.register_category(dimension_field_value)] = Aggregate.values(@aggregates, values)
             
-          else
-            # the last dimension is a normal category, using SUMs.
+          elsif aggregates.length == 0
+            # the last dimension is a category with possible overlap, using SUMs.
             # every category will have its number on this row
             result = [] if result.nil?
             values.each do |key, value| 
-              result[dim.category_index(key.to_sym)] = value.to_i 
-            end
+             result[dim.category_index(key.to_sym)] = value.to_i 
+            end      
+            
+          else
+            # the last category is a normal category
+            dimension_field_value = values["dimension_#{@dimensions.length - 1}"]
+            result[dim.category_index(dimension_field_value.to_sym)] = Aggregate.values(@aggregates, values)
           end
         end
       end
@@ -144,7 +162,7 @@ module ActiveRecord::OLAP
       if dim == @dimensions.last
         # set all categories to 0 if no value is set
         dim.categories.length.times do |i|
-          result[i] = 0 if result[i].nil?
+          result[i] = Aggregate.default_values(@aggregates) if result[i].nil?
         end
       else
         # if no value set, create an empty array and iterate to the next dimension

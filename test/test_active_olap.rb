@@ -19,6 +19,13 @@ class OlapTest < ActiveRecord::Base
           :period_length   => 1.day,
           :trend_end       => Time.now.midnight
         } } }
+        
+    olap.dimension :with_overlap, :categories => {
+          :starts_with_1 => "string_field LIKE '1%'",
+          :like_23       => "string_field LIKE '%23%'"
+        }
+        
+    olap.aggregate :sum_int, :sum_int_field
   end
   
 end
@@ -59,6 +66,60 @@ class ActiveRecord::OLAP::Test < Test::Unit::TestCase
   
   # --- TESTS ---------------------------------
 
+  def test_with_aggregates
+    # defined using a smart symbol
+    result = OlapTest.olap_query(:category, :aggregate => :sum_int_field)
+    assert_equal 33, result[:first_cat]    
+    assert_equal 77, result[:second_cat]
+    assert_equal 33, result[:no_category]    
+    assert_equal nil,  result[:third_cat]        
+    assert_equal nil,  result[:other]     
+
+    # defined using the configurator
+    result = OlapTest.olap_query(:category, :aggregate => :sum_int)
+    assert_equal 33, result[:first_cat]    
+    assert_equal 77, result[:second_cat]
+
+    # using an SQL expression
+    result = OlapTest.olap_query(:category, :aggregate => 'avg(olap_tests.int_field)')
+    assert_equal 33.0, result[:first_cat]    
+    assert_equal (33.0 + 44.0) / 2, result[:second_cat]
+    assert_equal 33.0, result[:no_category]    
+    assert_equal nil,  result[:third_cat]        
+    assert_equal nil,  result[:other]
+    
+    # multiple aggregates
+    result = OlapTest.olap_query(:category, :aggregate => { :records => :count_distinct, :avg => 'avg(olap_tests.int_field)', :sum_int => :sum_int })
+    assert_equal 1, result.depth
+    assert_equal 5, result.breadth
+
+    assert_equal 1, result[:first_cat][:records]
+    assert_equal 33.0, result[:first_cat][:sum_int]
+    assert_equal (33.0 + 44.0) / 2, result[:second_cat][:avg]
+    
+    # array notation
+    result = OlapTest.olap_query(:category, :aggregate => [:count_distinct, 'avg(olap_tests.int_field)', [:sum, :sum_int]] )
+    assert_equal 1, result.depth
+    assert_equal 5, result.breadth
+
+    assert_equal 1, result[:first_cat][:count_distinct]
+    assert_equal 33.0, result[:first_cat][:sum]
+    assert_equal (33.0 + 44.0) / 2, result[:second_cat]['avg(olap_tests.int_field)']
+  end
+
+  def test_with_overlap
+    result = OlapTest.olap_query(:with_overlap, :aggregate => :count_with_overlap)
+    assert_kind_of ActiveRecord::OLAP::Cube, result    
+    assert_equal 1, result.depth
+    assert_equal 3, result.breadth
+    
+    assert_equal 2, result[:like_23]
+    assert_equal 3, result[:starts_with_1]
+    assert_equal 1, result[:other]
+        
+    assert result.sum > OlapTest.count
+  end
+  
   def test_conditions
     result = OlapTest.olap_query(:field => :category_field, :conditions => {:datetime_field => nil})
     assert_equal 1, result.depth
@@ -66,7 +127,7 @@ class ActiveRecord::OLAP::Test < Test::Unit::TestCase
     
     assert_equal 1, OlapTest.olap_drilldown({:field => :category_field, :conditions => {:datetime_field => nil}} => 'second_cat').count
   end
-
+  
   def test_config_with_lambda_trend_and_transpose
     
     result = OlapTest.olap_query(:category, :my_trend)
