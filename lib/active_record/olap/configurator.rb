@@ -15,6 +15,13 @@ module ActiveRecord::OLAP
       @klass.active_olap_dimensions[name] = definition
     end
     
+    def time_dimension(name, field, defaults = {})
+      @klass.active_olap_dimensions[name] = Proc.new do |*options|
+        options = options.empty? ? {} : options.first
+        { :trend => defaults.merge(options).merge(:timestamp_field => field) }
+      end
+    end
+    
     # registers an aggregate for the class it belongs to
     def aggregate(name, definition)
       @klass.active_olap_aggregates[name] = definition

@@ -29,6 +29,12 @@ module ActiveRecord::OLAP
         else
           return Dimension.new(klass, definition, scope)        
         end
+      when Array
+        if klass.active_olap_dimensions.has_key?(definition.first)
+          return Dimension.new(klass, klass.active_olap_dimensions[definition.shift].call(*definition), scope)
+        else 
+          return Dimension.new(klass, definition, scope)
+        end
       else
         return Dimension.new(klass, definition, scope)
       end

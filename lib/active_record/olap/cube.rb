@@ -17,9 +17,11 @@ module ActiveRecord::OLAP
       end
     end
     
-    def sum
+    def sum(aggregate = nil)
       total_sum = 0
-      self.each { |cat, value| total_sum += (value.kind_of?(Cube) ? value.sum : value) }
+      self.each do |cat, value| 
+          total_sum += (value.kind_of?(Cube) ? value.sum : (aggregate.nil? ? value : value[aggregate]))
+      end
       return total_sum
     end
     

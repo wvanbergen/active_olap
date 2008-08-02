@@ -19,7 +19,6 @@ module ActiveRecord::OLAP
 
       elsif aggregates_given.kind_of?(Hash) || aggregates_given.kind_of?(Array)
         # multiple aggregates given
-        puts "multiple aggregates: " + aggregates_given.inspect
         return aggregates_given.to_a.map do |aggregate_definition|
           if aggregate_definition.kind_of?(Array)
             if klass.active_olap_aggregates.has_key?(aggregate_definition.last)

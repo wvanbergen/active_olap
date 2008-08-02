@@ -19,6 +19,8 @@ class OlapTest < ActiveRecord::Base
           :period_length   => 1.day,
           :trend_end       => Time.now.midnight
         } } }
+    
+    olap.time_dimension :the_time, :datetime_field, {:period_count => 20, :period_length => 1.day}
         
     olap.dimension :with_overlap, :categories => {
           :starts_with_1 => "string_field LIKE '1%'",
@@ -65,6 +67,16 @@ class ActiveRecord::OLAP::Test < Test::Unit::TestCase
   end
   
   # --- TESTS ---------------------------------
+
+  def test_time_dimension
+    result = OlapTest.olap_query(:the_time)
+    assert_equal 1, result.depth 
+    assert_equal 20, result.breadth
+    
+    result = OlapTest.olap_query([:the_time, {:period_count => 10}])
+    assert_equal 1, result.depth 
+    assert_equal 10, result.breadth
+  end
 
   def test_with_aggregates
     # defined using a smart symbol
@@ -135,7 +147,7 @@ class ActiveRecord::OLAP::Test < Test::Unit::TestCase
     assert_equal 2, result.depth
     assert_equal :first_cat, result.dimension.categories.first.label
     
-    #switch the dimensions sing transpose
+    # switch the dimensions using transpose
     result = result.transpose
     
     assert_equal 20, result.breadth # 20 periods
