@@ -173,12 +173,12 @@ class ActiveRecord::OLAP::Test < Test::Unit::TestCase
     assert_kind_of ActiveRecord::OLAP::Cube, result
     assert_equal 2, result.depth
     
-    assert_equal 1, result[:period_3, 'first_cat']
-    assert_equal 0, result[:period_3, 'second_cat']        
-    assert_equal 0, result[:period_1, 'first_cat']        
-    assert_equal 1, result[:period_1, 'second_cat']    
-    assert_equal 0, result[:period_0, 'second_cat']
-    assert_equal 0, result[:period_2, 'first_cat']            
+    assert_equal 1, result[:period_2, 'first_cat']
+    assert_equal 0, result[:period_2, 'second_cat']        
+    assert_equal 0, result[:period_0, 'first_cat']        
+    assert_equal 1, result[:period_0, 'second_cat']    
+    assert_equal 0, result[:period_3, 'second_cat']
+    assert_equal 0, result[:period_1, 'first_cat']            
     
     assert_equal 0, OlapTest.olap_drilldown(dimension_1 => :period_4, dimension_2 => 'second_cat').count
   end

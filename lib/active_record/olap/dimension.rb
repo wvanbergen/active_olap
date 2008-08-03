@@ -191,7 +191,7 @@ module ActiveRecord::OLAP
       
       period_count     = trend_definition.delete(:period_count)    || 14
       period_length    = trend_definition.delete(:period_length)   || 1.days
-      trend_end        = trend_definition.delete(:end)             || Time.now.utc.midnight
+      trend_end        = trend_definition.delete(:end)             || Time.now.utc.midnight + 1.day
       trend_begin      = trend_definition.delete(:begin)
       timestamp_field  = trend_definition.delete(:timestamp_field)
       
