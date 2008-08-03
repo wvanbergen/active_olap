@@ -4,7 +4,11 @@ module ActiveRecord::OLAP
     attr_reader :klass
     attr_reader :categories
     attr_reader :category_field
-
+    attr_reader :info
+    
+    attr_reader :joins
+    attr_reader :conditions
+    
     # creates a new Dimension, given a definition.
     # The definition can be:
     # - A name (Symbol) of registered definition
@@ -13,7 +17,7 @@ module ActiveRecord::OLAP
     #   - :categories -> for custom categories
     #   - :trend      -> for a trend dimension
     #   - :field      -> for a table field dimension (similar to passing a Symbol)
-    def self.create(klass, definition = nil, scope = nil)
+    def self.create(klass, definition = nil)
       return klass if klass.kind_of? Dimension      
       
       case definition
@@ -22,21 +26,21 @@ module ActiveRecord::OLAP
       when Symbol
         if klass.active_olap_dimensions.has_key?(definition)
           if klass.active_olap_dimensions[definition].respond_to?(:call)
-            return Dimension.new(klass, klass.active_olap_dimensions[definition].call, scope)
+            return Dimension.new(klass, klass.active_olap_dimensions[definition].call)
           else
-            return Dimension.new(klass, klass.active_olap_dimensions[definition], scope)
+            return Dimension.new(klass, klass.active_olap_dimensions[definition])
           end
         else
-          return Dimension.new(klass, definition, scope)        
+          return Dimension.new(klass, definition)        
         end
       when Array
         if klass.active_olap_dimensions.has_key?(definition.first)
-          return Dimension.new(klass, klass.active_olap_dimensions[definition.shift].call(*definition), scope)
+          return Dimension.new(klass, klass.active_olap_dimensions[definition.shift].call(*definition))
         else 
-          return Dimension.new(klass, definition, scope)
+          return Dimension.new(klass, definition)
         end
       else
-        return Dimension.new(klass, definition, scope)
+        return Dimension.new(klass, definition)
       end
     end
 
@@ -49,7 +53,7 @@ module ActiveRecord::OLAP
     end
     
     # Builds a CASE expression for this dimension.
-    def to_group_expression(variable_name)
+    def to_case_expression(variable_name)
       if @category_field
         "#{@klass.connection.send(:quote_column_name, @category_field)} AS #{@klass.connection.send(:quote_column_name, variable_name)}"
       else
@@ -109,23 +113,24 @@ module ActiveRecord::OLAP
     end
     
     def is_trend_dimension?
-      @is_trend
+      info.has_key?(:trend) && info[:trend] == true
     end
     
     def is_custom_dimension?
       !is_field_dimension? && !is_trend_dimension?
     end
     
+    def has_overlap?
+      info.has_key?(:overlap) && info[:overlap] == true
+    end
+    
     # Returns a sanitized SQL expression for a given category
     def sanitized_sql_for(cat)
-      is_field_dimension? ? @klass.send(:sanitize_sql, { @category_field => cat }) : self[cat].to_sanitized_sql
+      cat_conditions = is_field_dimension? ? @klass.send(:sanitize_sql, { @category_field => cat }) : self[cat].to_sanitized_sql
+      @klass.send(:merge_conditions, cat_conditions, @conditions) 
     end
     
     protected
-    
-    def update_scope
-      
-    end
     
     # Generates an SQL expression for the :other-category
     def generate_other_condition
@@ -134,27 +139,36 @@ module ActiveRecord::OLAP
     end    
 
     # Initializes a new Dimension object. See Dimension#create
-    def initialize(klass, definition, scope_conditions = nil)
+    def initialize(klass, definition)
       @klass = klass
       @categories = []
-      @is_trend = false
+
+      @info = {}
+
+      @joins = []
+      @conditions = nil
       
       case definition
       when Hash
-        scope_conditions << definition[:conditions] if scope_conditions.kind_of?(Array) && definition.has_key?(:conditions)
+        hash = definition.clone
+        @conditions = hash.delete(:conditions)
+        @joins += hash[:joins].kind_of?(Array) ? hash.delete(:joins) : [hash.delete(:joins)] if hash.has_key?(:joins)
         
-        if definition.has_key?(:categories)
-          generate_custom_categories(definition[:categories])
+        if hash.has_key?(:categories)
+          generate_custom_categories(hash.delete(:categories))
           
-        elsif definition.has_key?(:trend)
-          generate_trend_categories(definition[:trend], scope_conditions)
+        elsif hash.has_key?(:trend)
+          generate_trend_categories(hash.delete(:trend))
           
-        elsif definition.has_key?(:field)
-          generate_field_dimension(definition[:field])
+        elsif hash.has_key?(:field)
+          generate_field_dimension(hash.delete(:field))
 
         else
           raise "Invalid category definition! " + definition.inspect          
         end
+        
+        # make the remaining fields available in the info object
+        @info = hash
         
       when Symbol
         generate_field_dimension(definition)
@@ -186,8 +200,8 @@ module ActiveRecord::OLAP
       register_category(:other, :expression => generate_other_condition) unless skip_other
     end
     
-    def generate_trend_categories(trend_definition, scope_conditions = nil)
-      @is_trend = true
+    def generate_trend_categories(trend_definition)
+      @info[:trend] = true
       
       period_count     = trend_definition.delete(:period_count)    || 14
       period_length    = trend_definition.delete(:period_length)   || 1.days
@@ -208,7 +222,8 @@ module ActiveRecord::OLAP
         period_begin  += period_length
       end
       
-      scope_conditions << ["#{field} >= ? AND #{field} < ?", trend_begin, period_begin]
+      # update conditions by only querying records that fall in any periods.
+      @conditions = @klass.send(:merge_conditions, @conditions, ["#{field} >= ? AND #{field} < ?", trend_begin, period_begin])
       
     end    
   end

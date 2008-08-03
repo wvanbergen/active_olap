@@ -9,37 +9,24 @@ module ActiveRecord::OLAP
     attr_reader :distinct
     attr_reader :expression
 
+    attr_reader :joins
     attr_reader :info
 
     def self.all_from_olap_query_call(klass, aggregates_given)
       
-      if aggregates_given == :count_with_overlap
-        # Use no aggregates, but SUM expression
-        return []
-
-      elsif aggregates_given.kind_of?(Hash) || aggregates_given.kind_of?(Array)
+      if aggregates_given.kind_of?(Array)
         # multiple aggregates given
-        return aggregates_given.to_a.map do |aggregate_definition|
-          if aggregate_definition.kind_of?(Array)
-            if klass.active_olap_aggregates.has_key?(aggregate_definition.last)
-              Aggregate.from_configuration(klass, aggregate_definition.last, aggregate_definition.first)
-            else              
-              Aggregate.create(klass, aggregate_definition.first, aggregate_definition.last)
-            end
-          elsif aggregate_definition.kind_of?(Symbol) || aggregate_definition.kind_of?(String)
-            if klass.active_olap_aggregates.has_key?(aggregate_definition)
-              Aggregate.from_configuration(klass, aggregate_definition)
-            else
-              Aggregate.create(klass, aggregate_definition.to_sym, aggregate_definition)
-            end
+        return aggregates_given.map do |aggregate_definition|
+          if aggregate_definition.kind_of?(Symbol) && klass.active_olap_aggregates.has_key?(aggregate_definition)
+            Aggregate.from_configuration(klass, aggregate_definition)
           else
-            raise "Invalid aggregate definition: #{aggregate_definition.inspect}"
+            Aggregate.create(klass, aggregate_definition.to_sym, aggregate_definition)
           end
         end
 
       else
         # single aggregate given
-        if klass.active_olap_aggregates.has_key?(aggregates_given)
+        if aggregates_given.kind_of?(Symbol) && klass.active_olap_aggregates.has_key?(aggregates_given)
           return [Aggregate.from_configuration(klass, aggregates_given)]
         else
           return [Aggregate.create(klass, :the_only_olap_aggregate_field, aggregates_given)]
@@ -53,7 +40,7 @@ module ActiveRecord::OLAP
       @function   = function
       @expression = expression
       @distinct   = distinct
-      
+      @joins      = []
       @info       = {}
     end
     
@@ -81,10 +68,10 @@ module ActiveRecord::OLAP
     end    
 
     def self.from_hash(klass, label, hash)
-      agg = Aggregate.create(klass, label, hash[:expression])
-      hash.each do |key, val|
-        agg.info[key] = val unless key == :expression
-      end
+      hash = hash.clone
+      agg = Aggregate.create(klass, label, hash.delete(:expression))
+      agg.joins.concat(hash[:joins].kind_of?(Array) ? hash.delete(:joins) : [hash.delete(:joins)]) if hash.has_key?(:joins)
+      hash.each { |key, val| agg.info[key] = val }
       return agg
     end
     
@@ -100,9 +87,9 @@ module ActiveRecord::OLAP
       
       case aggregate_name
       when :count_all
-        return Aggregate.new(klass, label, :count, '*', false)
+        return Aggregate.new(klass, label, :count, '*', false) # with table name?
       when :count_distinct_all
-        return Aggregate.new(klass, label, :count, '*', true)
+        return Aggregate.new(klass, label, :count, '*', true)  # with table name?
       when :count
         return Aggregate.new(klass, label, :count, :id, false)        
       when :count_distinct
@@ -136,6 +123,7 @@ module ActiveRecord::OLAP
     end
     
     def cast_value(source)
+      return nil if source.nil?
       (@function == :count) ? source.to_i : source.to_f # TODO: better?
     end
     

@@ -23,8 +23,10 @@ module ActiveRecord::OLAP
     end
     
     # registers an aggregate for the class it belongs to
-    def aggregate(name, definition)
-      @klass.active_olap_aggregates[name] = definition
+    def aggregate(name, definition = nil, options = {})
+      definition = name if definition.nil?
+      agg_definition = options.merge(:expression => definition)
+      @klass.active_olap_aggregates[name] = agg_definition
     end
   end
 end

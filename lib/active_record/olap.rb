@@ -22,19 +22,30 @@ module ActiveRecord::OLAP
     # Performs an OLAP query that counts how many records do occur in given categories.
     # It can be used for multiple dimensions 
     # It expects a list of category definitions
-    def olap_query(*dimensions)
+    def olap_query(*args)
 
-      if dimensions.last.kind_of?(Hash) && dimensions.last.has_key?(:aggregate)
-        aggregates = Aggregate.all_from_olap_query_call(self, dimensions.pop[:aggregate])
+      # set aggregates apart if they are given
+      aggregates_given = (args.last.kind_of?(Hash) && args.last.has_key?(:aggregate)) ? args.pop[:aggregate] : nil
+      
+      # parse the dimensions
+      raise "You have to provide at least one dimension for an OLAP query" if args.length == 0    
+      dimensions = args.collect { |d| Dimension.create(self, d) }
+      
+      raise "Overlapping categories only supported in the last dimension" if dimensions[0..-2].any? { |d| d.has_overlap? }
+      raise "Only counting is supported with overlapping categories" if dimensions.last.has_overlap? && aggregates_given
+
+      if aggregates_given
+        aggregates = Aggregate.all_from_olap_query_call(self, aggregates_given)
+      elsif dimensions.last.has_overlap?
+        aggregates = []
       else
         aggregates = [Aggregate.create(self, :the_olap_count_field, :count_distinct)]
       end
-      
-      raise "You have to provide at least one dimension for an OLAP query" if dimensions.length == 0    
-      
-      scope_conditions = []
-      dimensions = dimensions.collect { |d| Dimension.create(self, d, scope_conditions) }
-      conditions = self.send(:merge_conditions, *scope_conditions)
+
+      conditions = self.send(:merge_conditions, *dimensions.map(&:conditions))
+      joins = (dimensions.map(&:joins) + aggregates.map(&:joins)).flatten.uniq
+      joins_clause = joins.empty? ? nil : joins.join(' ')
+
 
       selects = aggregates.map { |agg| agg.to_sanitized_sql }
       groups  = []
@@ -49,12 +60,13 @@ module ActiveRecord::OLAP
       dimensions_to_group.each_with_index do |d, index|
         var_name = "dimension_#{index}"
         groups  << self.connection.quote_column_name(var_name)
-        selects << d.to_group_expression(var_name)
+        selects << d.to_case_expression(var_name)
       end
     
       group_clause = groups.length > 0 ? groups.join(', ') : nil
-      # TODO: joins, having
-      query_result = self.scoped(:conditions => conditions).find(:all, :select => selects.join(', '), :group => group_clause, :order => group_clause)  
+      # TODO: having
+      query_result = self.scoped(:conditions => conditions).find(:all, :select => selects.join(', '), 
+          :joins => joins_clause, :group => group_clause, :order => group_clause)  
 
       return Cube.new(self, dimensions, aggregates, query_result)
     end   
@@ -66,10 +78,8 @@ module ActiveRecord::OLAP
     raise "You have to provide at least one dimension for an OLAP query" if options.length == 0    
 
     # returns an options hash to create a scope (the named_scope :olap_drilldown)
-    scope_conditions = []
-    scope_conditions += options.map { |dim, cat| Dimension.create(self, dim, scope_conditions).sanitized_sql_for(cat) }
-    conditions = self.send(:merge_conditions, *scope_conditions)
-    return { :select => connection.quote_table_name(table_name) + '.*', :conditions => conditions }
+    conditions = options.map { |dim, cat| Dimension.create(self, dim).sanitized_sql_for(cat) }
+    { :select => connection.quote_table_name(table_name) + '.*', :conditions => self.send(:merge_conditions, *conditions) }
   end
   
 end
