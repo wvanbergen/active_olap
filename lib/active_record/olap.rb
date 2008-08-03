@@ -34,18 +34,19 @@ module ActiveRecord::OLAP
       raise "Overlapping categories only supported in the last dimension" if dimensions[0..-2].any? { |d| d.has_overlap? }
       raise "Only counting is supported with overlapping categories" if dimensions.last.has_overlap? && aggregates_given
 
-      if aggregates_given
-        aggregates = Aggregate.all_from_olap_query_call(self, aggregates_given)
-      elsif dimensions.last.has_overlap?
-        aggregates = []
-      else
-        aggregates = [Aggregate.create(self, :the_olap_count_field, :count_distinct)]
+      if !aggregates_given
+        if dimensions.last.has_overlap?
+          aggregates = []
+        else
+          aggregates = [Aggregate.create(self, :the_olap_count_field, :count_distinct)]
+        end
+      else 
+        aggregates = Aggregate.all_from_olap_query_call(self, aggregates_given)        
       end
 
       conditions = self.send(:merge_conditions, *dimensions.map(&:conditions))
       joins = (dimensions.map(&:joins) + aggregates.map(&:joins)).flatten.uniq
       joins_clause = joins.empty? ? nil : joins.join(' ')
-
 
       selects = aggregates.map { |agg| agg.to_sanitized_sql }
       groups  = []
@@ -53,7 +54,7 @@ module ActiveRecord::OLAP
       if aggregates.length > 0
         dimensions_to_group = dimensions.clone
       else 
-        selects << dimensions.last.to_aggregate_expression
+        selects << dimensions.last.to_count_with_overlap_sql
         dimensions_to_group = dimensions[0, dimensions.length - 1]
       end
       

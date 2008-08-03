@@ -29,6 +29,11 @@ module ActiveRecord::OLAP
     def to_sanitized_sql
       @dimension.klass.send(:sanitize_sql, @conditions)
     end
+    
+    def to_count_sql(count_what)
+      "COUNT(DISTINCT CASE WHEN (#{to_sanitized_sql}) THEN #{count_what} ELSE NULL END) 
+              AS #{@dimension.klass.connection.send(:quote_column_name, label.to_s)}"
+    end
  
     # Returns the label of this category as a string
     def to_s

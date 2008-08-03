@@ -13,23 +13,13 @@ module ActiveRecord::OLAP
     attr_reader :info
 
     def self.all_from_olap_query_call(klass, aggregates_given)
+      aggregates_given = [aggregates_given] unless aggregates_given.kind_of?(Array)
       
-      if aggregates_given.kind_of?(Array)
-        # multiple aggregates given
-        return aggregates_given.map do |aggregate_definition|
-          if aggregate_definition.kind_of?(Symbol) && klass.active_olap_aggregates.has_key?(aggregate_definition)
-            Aggregate.from_configuration(klass, aggregate_definition)
-          else
-            Aggregate.create(klass, aggregate_definition.to_sym, aggregate_definition)
-          end
-        end
-
-      else
-        # single aggregate given
-        if aggregates_given.kind_of?(Symbol) && klass.active_olap_aggregates.has_key?(aggregates_given)
-          return [Aggregate.from_configuration(klass, aggregates_given)]
+      return aggregates_given.map do |aggregate_definition|
+        if aggregate_definition.kind_of?(Symbol) && klass.active_olap_aggregates.has_key?(aggregate_definition)
+          Aggregate.from_configuration(klass, aggregate_definition)
         else
-          return [Aggregate.create(klass, :the_only_olap_aggregate_field, aggregates_given)]
+          Aggregate.create(klass, aggregate_definition.to_sym, aggregate_definition)
         end
       end
     end

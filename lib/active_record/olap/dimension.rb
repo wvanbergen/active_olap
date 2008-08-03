@@ -45,11 +45,12 @@ module ActiveRecord::OLAP
     end
 
     # Builds a SUM expression for this dimension.
-    def to_aggregate_expression
-      sql_fragments = @categories.map do |category|
-        "SUM(#{category.to_sanitized_sql}) AS #{@klass.connection.send(:quote_column_name, category.label.to_s)}"
-      end
-      return sql_fragments.join(', ')
+    def to_count_with_overlap_sql
+      
+      count_value = @klass.connection.send(:quote_table_name, @klass.table_name) + '.' + 
+                    @klass.connection.send(:quote_column_name, :id) # TODO: other column than id
+        
+      @categories.map { |category| category.to_count_sql(count_value) }.join(', ')
     end
     
     # Builds a CASE expression for this dimension.

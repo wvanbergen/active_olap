@@ -96,7 +96,7 @@ class ActiveRecord::OLAP::Test < Test::Unit::TestCase
   
   # --- TESTS ---------------------------------
 
-  def test_wrong_order
+  def test_wrong_overlap_dimension_usage
     
     begin
       result = OlapTest.olap_query :with_overlap, :category
@@ -105,6 +105,12 @@ class ActiveRecord::OLAP::Test < Test::Unit::TestCase
       assert true
     end
     
+    begin
+      result = OlapTest.olap_query :with_overlap, :aggregate => :avg_int_field
+      assert false, "An exception should have been thrown"
+    rescue
+      assert true
+    end
   end
 
   def test_with_associations
@@ -113,6 +119,12 @@ class ActiveRecord::OLAP::Test < Test::Unit::TestCase
     assert_equal 1, result[:no_category][:count_distinct]
     assert_equal 5.7, result[:no_category][:total_price]
     assert_equal nil, result[:first_cat][:total_price]    
+    
+    result = OlapTest.olap_query(:in_association)
+    assert_equal 1, result.depth
+    assert_equal 1, result[:first]
+    assert_equal 1, result[:second]
+    assert_equal 4, result[:other]        
   end
   
   def test_time_dimension
