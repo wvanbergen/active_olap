@@ -44,7 +44,7 @@ class OlapAssociation < ActiveRecord::Base
   belongs_to :olap_test
 end
 
-class ActiveRecord::OLAP::Test < Test::Unit::TestCase
+class ActiveRecord::Olap::Test < Test::Unit::TestCase
   
   # creates a memory based database to test OLAP queries
   def setup
@@ -180,7 +180,7 @@ class ActiveRecord::OLAP::Test < Test::Unit::TestCase
   
   def test_with_overlap
     result = OlapTest.olap_query(:with_overlap)
-    assert_kind_of ActiveRecord::OLAP::Cube, result    
+    assert_kind_of ActiveRecord::Olap::Cube, result    
     assert_equal 1, result.depth
     assert_equal 3, result.breadth
     
@@ -229,7 +229,7 @@ class ActiveRecord::OLAP::Test < Test::Unit::TestCase
     dimension_2 = :category_field
   
     result = OlapTest.olap_query(dimension_1, dimension_2)
-    assert_kind_of ActiveRecord::OLAP::Cube, result
+    assert_kind_of ActiveRecord::Olap::Cube, result
     assert_equal 2, result.depth
     
     assert_equal 1, result[:period_2, 'first_cat']
@@ -248,7 +248,7 @@ class ActiveRecord::OLAP::Test < Test::Unit::TestCase
     dimension_3 = { :categories => { :string_like_2 => ["string_field LIKE ?", '%2%'] } }
     
     result = OlapTest.olap_query(dimension_1, dimension_2, dimension_3)
-    assert_kind_of ActiveRecord::OLAP::Cube, result
+    assert_kind_of ActiveRecord::Olap::Cube, result
     assert_equal 3, result.depth
     
     # check that every value is set
@@ -266,16 +266,16 @@ class ActiveRecord::OLAP::Test < Test::Unit::TestCase
     assert_equal 0, result[:other, nil,:other]    
     
     intermediate_result = result[:other]
-    assert_kind_of ActiveRecord::OLAP::Cube, intermediate_result
+    assert_kind_of ActiveRecord::Olap::Cube, intermediate_result
     assert_equal 2, intermediate_result.depth
-    assert_kind_of ActiveRecord::OLAP::Cube, result[:other, 'second_cat']
-    assert_kind_of ActiveRecord::OLAP::Cube, result[:other]['second_cat']
+    assert_kind_of ActiveRecord::Olap::Cube, result[:other, 'second_cat']
+    assert_kind_of ActiveRecord::Olap::Cube, result[:other]['second_cat']
     assert 1, intermediate_result['second_cat'][:string_like_2]
     assert 1, result[:other, 'second_cat'][:string_like_2]    
     
     found_categories = []
     intermediate_result.each do |category, res|
-      assert_kind_of ActiveRecord::OLAP::Cube, res
+      assert_kind_of ActiveRecord::Olap::Cube, res
       found_categories << category.label
     end
     assert_equal ['first_cat', 'second_cat', nil], found_categories
@@ -286,7 +286,7 @@ class ActiveRecord::OLAP::Test < Test::Unit::TestCase
     dimension_2 = :category_field
   
     result = OlapTest.olap_query(dimension_1, dimension_2)
-    assert_kind_of ActiveRecord::OLAP::Cube, result
+    assert_kind_of ActiveRecord::Olap::Cube, result
     assert_equal 2, result.depth
   
     assert_equal 1, result[:datetime_field_set, 'first_cat']
@@ -297,7 +297,7 @@ class ActiveRecord::OLAP::Test < Test::Unit::TestCase
     assert_equal 1, result[:other, nil]
   
     result = OlapTest.olap_query(dimension_2, dimension_1)
-    assert_kind_of ActiveRecord::OLAP::Cube, result
+    assert_kind_of ActiveRecord::Olap::Cube, result
     assert_equal 2, result.depth
   
     assert_equal 1, result['first_cat', :datetime_field_set]
@@ -308,7 +308,7 @@ class ActiveRecord::OLAP::Test < Test::Unit::TestCase
   
   def test_condition_field
     result = OlapTest.olap_query(:category_field)
-    assert_kind_of ActiveRecord::OLAP::Cube, result
+    assert_kind_of ActiveRecord::Olap::Cube, result
     assert_equal 1, result.depth
     
     assert_equal 1,   result['first_cat']
@@ -325,7 +325,7 @@ class ActiveRecord::OLAP::Test < Test::Unit::TestCase
     dimension_2 = { :categories => { :string_like_2 => ["string_field LIKE ?", '%2%'] } }
     
     result = OlapTest.olap_query(dimension_1, dimension_2)
-    assert_kind_of ActiveRecord::OLAP::Cube, result
+    assert_kind_of ActiveRecord::Olap::Cube, result
     assert_equal 2, result.depth
     
     assert_equal 0, result[:datetime_field_not_set,:other]
@@ -343,7 +343,7 @@ class ActiveRecord::OLAP::Test < Test::Unit::TestCase
     dimension_2 = { :categories => { :string_like_2 => ["string_field LIKE ?", '%2%'], :other => false } }
     
     result = OlapTest.olap_query(dimension_1, dimension_2)
-    assert_kind_of ActiveRecord::OLAP::Cube, result
+    assert_kind_of ActiveRecord::Olap::Cube, result
     assert_equal 2, result.depth
     
     assert_nil result[:other]
@@ -354,12 +354,12 @@ class ActiveRecord::OLAP::Test < Test::Unit::TestCase
   
   def test_olap_query
     result = OlapTest.olap_query :categories => { :datetime_field_not_set => {:datetime_field => nil} }
-    assert_kind_of ActiveRecord::OLAP::Cube, result
+    assert_kind_of ActiveRecord::Olap::Cube, result
     assert_equal 2, result[:datetime_field_not_set]
     assert_equal 2, result[:other]
     
     result = OlapTest.olap_query :categories => { :string_like_2 => ["string_field LIKE ?", '%2%'] }
-    assert_kind_of ActiveRecord::OLAP::Cube, result
+    assert_kind_of ActiveRecord::Olap::Cube, result
     assert_equal 3, result[:string_like_2]
     assert_equal 1, result[:other]    
     
@@ -383,7 +383,7 @@ class ActiveRecord::OLAP::Test < Test::Unit::TestCase
   def test_olap_query_within_scope
     assert_equal 3, OlapTest.int_field_33.count
     result = OlapTest.int_field_33.olap_query :categories => { :datetime_field_not_set => {:datetime_field => nil} }
-    assert_kind_of ActiveRecord::OLAP::Cube, result
+    assert_kind_of ActiveRecord::Olap::Cube, result
     assert_equal 1, result[:datetime_field_not_set]
     assert_equal 2, result[:other]   # the other record does not fall within the scope int_field_33
       
@@ -397,24 +397,24 @@ class ActiveRecord::OLAP::Test < Test::Unit::TestCase
   # the actual SQL expression strings are connection specific,
   # For this test, they are in SQLite3 format
   def test_other_condition
-    dimension = ActiveRecord::OLAP::Dimension.create(OlapTest, :categories => { :datetime_field_set => {:datetime_field => nil}})
-    assert_kind_of ActiveRecord::OLAP::Dimension, dimension
+    dimension = ActiveRecord::Olap::Dimension.create(OlapTest, :categories => { :datetime_field_set => {:datetime_field => nil}})
+    assert_kind_of ActiveRecord::Olap::Dimension, dimension
     assert_equal '((("olap_tests"."datetime_field" IS NULL)) IS NULL OR NOT(("olap_tests"."datetime_field" IS NULL)))', dimension[:other].to_sanitized_sql
     
     dimension = { :categories => { :datetime_field_set => {:datetime_field => nil} } }
-    dimension = ActiveRecord::OLAP::Dimension.create(OlapTest, dimension)
+    dimension = ActiveRecord::Olap::Dimension.create(OlapTest, dimension)
     assert_kind_of String, dimension[:other].conditions
     
     dimension = { :categories => { :other => false, :datetime_field_set => {:datetime_field => nil} } }
-    dimension = ActiveRecord::OLAP::Dimension.create(OlapTest, dimension)
+    dimension = ActiveRecord::Olap::Dimension.create(OlapTest, dimension)
     assert_nil dimension[:other]
     
     dimension = { :categories => { :other => nil, :datetime_field_set => {:datetime_field => nil} } }
-    dimension = ActiveRecord::OLAP::Dimension.create(OlapTest, dimension)
+    dimension = ActiveRecord::Olap::Dimension.create(OlapTest, dimension)
     assert_nil dimension[:other]
     
     dimension = { :categories => { :other => ['willem = ?', "grea't"], :datetime_field_set => {:datetime_field => nil} } }
-    dimension = ActiveRecord::OLAP::Dimension.create(OlapTest, dimension)
+    dimension = ActiveRecord::Olap::Dimension.create(OlapTest, dimension)
     assert_equal ["willem = ?", "grea't"], dimension[:other].conditions
     assert_equal "willem = 'grea''t'", dimension[:other].to_sanitized_sql
   end

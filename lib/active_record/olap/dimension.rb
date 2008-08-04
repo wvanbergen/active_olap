@@ -1,4 +1,4 @@
-module ActiveRecord::OLAP
+module ActiveRecord::Olap
   class Dimension
 
     attr_reader :klass
@@ -113,16 +113,17 @@ module ActiveRecord::OLAP
       !@category_field.nil?
     end
     
-    def is_trend_dimension?
-      info.has_key?(:trend) && info[:trend] == true
+    def is_time_dimension?
+      puts "Dimension info: " + @info.inspect
+      @info.has_key?(:trend) && @info[:trend] == true
     end
     
     def is_custom_dimension?
-      !is_field_dimension? && !is_trend_dimension?
+      !is_field_dimension? && !is_time_dimension?
     end
     
     def has_overlap?
-      info.has_key?(:overlap) && info[:overlap] == true
+      @info.has_key?(:overlap) && @info[:overlap] == true
     end
     
     # Returns a sanitized SQL expression for a given category
@@ -169,7 +170,7 @@ module ActiveRecord::OLAP
         end
         
         # make the remaining fields available in the info object
-        @info = hash
+        @info.merge!(hash)
         
       when Symbol
         generate_field_dimension(definition)
@@ -202,8 +203,6 @@ module ActiveRecord::OLAP
     end
     
     def generate_trend_categories(trend_definition)
-      @info[:trend] = true
-      
       period_count     = trend_definition.delete(:period_count)    || 14
       period_length    = trend_definition.delete(:period_length)   || 1.days
       trend_end        = trend_definition.delete(:end)             || Time.now.utc.midnight + 1.day
@@ -225,7 +224,7 @@ module ActiveRecord::OLAP
       
       # update conditions by only querying records that fall in any periods.
       @conditions = @klass.send(:merge_conditions, @conditions, ["#{field} >= ? AND #{field} < ?", trend_begin, period_begin])
-      
+      @info[:trend] = true
     end    
   end
 end

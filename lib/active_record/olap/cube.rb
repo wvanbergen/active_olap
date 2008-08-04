@@ -1,4 +1,4 @@
-module ActiveRecord::OLAP
+module ActiveRecord::Olap
   class Cube
     
     attr_accessor :klass

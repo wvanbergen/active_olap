@@ -1,4 +1,4 @@
-module ActiveRecord::OLAP
+module ActiveRecord::Olap
   
   def enable_active_olap(config = nil, &block)
 
