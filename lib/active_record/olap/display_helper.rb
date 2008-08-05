@@ -11,6 +11,11 @@ module ActiveRecord::Olap::DisplayHelper
   def show_active_olap_period(category, options = {})
     options[:chart] ? "#{category.info[:end].strftime('\'%y/%m/%d')}" : "#{category.info[:begin].strftime('\'%y/%m/%d')} - #{category.info[:end].strftime('\'%y/%m/%d')}"
   end
+
+
+  def show_active_olap_aggregate(aggregate, options = {})
+    aggregate.info[:name].blank? ? aggregate.label.to_s : aggregate.info[:name]
+  end
   
   def show_active_olap_value(category, aggregate, value, options = {})
     value.nil? ? '-' : value.to_s

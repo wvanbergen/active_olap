@@ -14,12 +14,12 @@ module ActiveRecord::Olap::TableHelper
         content_tag(:tr, :id => "category-#{category.label}", :class => 'category') do
           # TODO: multiple aggregates
           content_tag(:th, show_active_olap_category(category), :class => 'label') <<
-          if cube.aggregates.length > 1
+          if value.kind_of?(Hash)
             cube.aggregates.map do |agg|
               content_tag(:td, show_active_olap_value(category, agg, value[agg.label]), :class => "value #{agg.label}") + "\n"
             end.join
           else
-            content_tag(:td, show_active_olap_value(category, cube.aggregates.first, value), :class => 'value') + "\n"
+            content_tag(:td, show_active_olap_value(category, cube.aggregates[0], value), :class => 'value') + "\n"
           end
         end
       end.join
@@ -57,7 +57,10 @@ module ActiveRecord::Olap::TableHelper
   def active_olap_table(cube, options = {}, html_options = {})
     content_tag(:table, :class => "active-olap table #{cube.depth}d" ) do
       content_tag(:thead) do
-        
+        content_tag(:tr) do
+          content_tag(:th, '&nbsp;', :class => 'categories', :colspan => cube.depth) <<
+          cube.aggregates.map { |agg| content_tag(:th, show_active_olap_aggregate(agg), :class => "aggregate #{agg.label}") }.join
+        end
       end << "\n" <<
       content_tag(:tbody) { active_olap_table_bodypart(cube, options) }
     end
@@ -71,15 +74,15 @@ module ActiveRecord::Olap::TableHelper
         content_tag(:tr) do
           cells = intermediate.map do |c| 
             cat_count = counts.shift
-            content_tag(:th, c.label.to_s, { :rowspan => cat_count * counts.inject(1) { |i, count| i * count } } ) 
+            content_tag(:th, c.label.to_s, { :class => 'category', :rowspan => cat_count * counts.inject(1) { |i, count| i * count } } ) 
           end.join
           intermediate.clear
           
-          cells += content_tag(:th, show_active_olap_category(category)) # TODO values
-          cells += if cube.aggregates.length == 1
-              content_tag(:td, show_active_olap_value(category, cube.aggregates.first, result))
+          cells << content_tag(:th, show_active_olap_category(category), :class => "category") # TODO values
+          cells << if result.kind_of?(Hash)
+              cube.aggregates.map { |agg| content_tag(:td, show_active_olap_value(category, agg, result[agg.label]), :class => "value #{agg.label}") }.join
             else
-              cube.aggregates.map { |agg| content_tag(:td, show_active_olap_value(category, agg, result[agg.label])) }.join
+              content_tag(:td, show_active_olap_value(category, cube.aggregates[0], result), :class => 'value')
             end
         end
       end

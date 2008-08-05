@@ -128,6 +128,7 @@ module ActiveRecord::Olap
     end
     
     def self.default_values(aggregates)
+      return 0 if aggregates.empty? # count with overlap
       result = HashWithIndifferentAccess.new
       aggregates.each { |agg| result[agg.label] = agg.default_value }      
       return (aggregates.length == 1) ? result[aggregates.first.label] : result
