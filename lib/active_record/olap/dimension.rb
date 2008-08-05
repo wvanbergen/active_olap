@@ -114,7 +114,6 @@ module ActiveRecord::Olap
     end
     
     def is_time_dimension?
-      puts "Dimension info: " + @info.inspect
       @info.has_key?(:trend) && @info[:trend] == true
     end
     
