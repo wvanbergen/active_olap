@@ -150,9 +150,7 @@ module ActiveRecord::Olap
             # the last dimension is a category with possible overlap, using SUMs.
             # every category will have its number on this row
             result = [] if result.nil?
-            values.each do |key, value| 
-             result[dim.category_index(key.to_sym)] = value.to_i 
-            end      
+            values.each { |key, value| result[dim.category_index(key.to_sym)] = value.to_i }
             
           else
             # the last category is a normal category

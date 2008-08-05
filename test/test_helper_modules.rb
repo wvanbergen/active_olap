@@ -24,22 +24,22 @@ class ActiveRecord::Olap::HelperTest < Test::Unit::TestCase
   def test_1d_table
     cube = OlapTest.olap_query(:category_field)
     assert_valid_cube cube, [:unknown] 
-    puts active_olap_1d_table(cube)
+    puts active_olap_table(cube)
     
     cube = OlapTest.olap_query(:with_overlap)
     assert_valid_cube cube, [:unknown]    
-    puts active_olap_1d_table(cube)
+    puts active_olap_table(cube)
     
     cube = OlapTest.olap_query(:category_field, :aggregate => [:count_distinct, :avg_int_field])
     assert_valid_cube cube, [:unknown] 
-    puts active_olap_1d_table(cube)    
+    puts active_olap_table(cube)    
   end
   
   def test_2d_table
     cube = OlapTest.olap_query(:category_field, :my_trend)
     assert_valid_cube cube, 2
     
-    table = active_olap_2d_table(cube)
+    table = active_olap_matrix(cube)
     puts table    
   end
   
