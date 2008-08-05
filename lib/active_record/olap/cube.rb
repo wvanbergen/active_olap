@@ -25,6 +25,10 @@ module ActiveRecord::Olap
       return total_sum
     end
     
+    def count
+      dimensions.inject(1) { |intermediate, dimension| intermediate * dimension.categories.length }
+    end
+    
     def raw_result 
       @result
     end
