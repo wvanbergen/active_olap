@@ -19,8 +19,8 @@ module ActiveRecord::Olap::ChartHelper
     
     chart.data('trend', cube.to_a)
     chart.show_legend = false
-    chart.axis :x, :labels  => labels    
-    chart.axis :y, :range => [0, cube.to_a.max]
+    chart.axis :x, :labels => labels    
+    chart.axis :y, :range  => [0, cube.raw_results.max]
     image_tag(chart.to_url, :size => '550x300', :alt => 'Active OLAP trend chart')
   end
 
