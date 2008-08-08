@@ -15,16 +15,16 @@ module ActiveRecord::Olap::TableHelper
         content_tag(:tr) do
           content_tag(:th, '&nbsp;') + "\n\t" +
           cube.dimensions[1].categories.map do |category|
-            content_tag(:th, show_active_olap_category(category), :class => 'category', :id => "category-#{category.label}")
+            content_tag(:th, show_active_olap_category(category, :for => :matrix), :class => 'category', :id => "category-#{category.label}")
           end.join
         end
       end << "\n" <<
       content_tag(:tbody) do
         cube.map do |category, sub_cube|
           content_tag(:tr, :class => 'category', :id => "category-#{category.label}") do
-            "\t\n" + content_tag(:th, show_active_olap_category(category)) + 
+            "\t\n" + content_tag(:th, show_active_olap_category(category, :for => :matrix)) + 
             sub_cube.map do |category, value|
-              content_tag(:td, show_active_olap_value(category, cube.aggregates.first, value), :class => 'value')
+              content_tag(:td, show_active_olap_value(category, cube.aggregates.first, value, :for => :matrix), :class => 'value')
             end.join
           end
         end
@@ -37,7 +37,7 @@ module ActiveRecord::Olap::TableHelper
       content_tag(:thead) do
         content_tag(:tr) do
           content_tag(:th, '&nbsp;', :class => 'categories', :colspan => cube.depth) <<
-          cube.aggregates.map { |agg| content_tag(:th, show_active_olap_aggregate(agg), :class => "aggregate #{agg.label}") }.join
+          cube.aggregates.map { |agg| content_tag(:th, show_active_olap_aggregate(agg, :for => :table), :class => "aggregate #{agg.label}") }.join
         end
       end << "\n" <<
       content_tag(:tbody) { active_olap_table_bodypart(cube, options) }
@@ -56,11 +56,11 @@ module ActiveRecord::Olap::TableHelper
           end.join
           intermediate.clear
           
-          cells << content_tag(:th, show_active_olap_category(category), :class => "category") # TODO values
+          cells << content_tag(:th, show_active_olap_category(category, :for => :table), :class => "category") # TODO values
           cells << if result.kind_of?(Hash)
-              cube.aggregates.map { |agg| content_tag(:td, show_active_olap_value(category, agg, result[agg.label]), :class => "value #{agg.label}") }.join
+              cube.aggregates.map { |agg| content_tag(:td, show_active_olap_value(category, agg, result[agg.label], :for => :table), :class => "value #{agg.label}") }.join
             else
-              content_tag(:td, show_active_olap_value(category, cube.aggregates[0], result), :class => 'value')
+              content_tag(:td, show_active_olap_value(category, cube.aggregates[0], result, :for => :table), :class => 'value')
             end
         end
       end
