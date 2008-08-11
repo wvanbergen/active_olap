@@ -9,9 +9,8 @@ module ActiveRecord::Olap::DisplayHelper
   end
   
   def show_active_olap_period(category, options = {})
-    options[:for] && [:line_chart].include?(options[:for])
-            ? "#{category.info[:end].strftime('\'%y/%m/%d')}" 
-            : "#{category.info[:begin].strftime('\'%y/%m/%d')} - #{category.info[:end].strftime('\'%y/%m/%d')}"
+    options[:for] && [:line_chart].include?(options[:for]) ? "#{category.info[:end].strftime('\'%y/%m/%d')}" :
+            "#{category.info[:begin].strftime('\'%y/%m/%d')} - #{category.info[:end].strftime('\'%y/%m/%d')}"
   end
 
 
