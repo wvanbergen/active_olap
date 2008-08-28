@@ -202,7 +202,7 @@ module ActiveRecord::Olap
     end
     
     def generate_trend_categories(trend_definition)
-      period_count     = trend_definition.delete(:period_count)    || 14
+      period_count     = trend_definition.delete(:periods) || trend_definition.delete(:period_count)    || 14      
       period_length    = trend_definition.delete(:period_length)   || 1.days
       trend_end        = trend_definition.delete(:end)             || Time.now.utc.midnight + 1.day
       trend_begin      = trend_definition.delete(:begin)

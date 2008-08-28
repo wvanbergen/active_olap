@@ -2,6 +2,7 @@ module ActiveRecord::Olap
   
   class Cube
     
+    attr_accessor :info
     attr_accessor :klass
     attr_accessor :dimensions
     attr_accessor :aggregates
@@ -11,6 +12,7 @@ module ActiveRecord::Olap
       @klass      = klass
       @dimensions = dimensions
       @aggregates = aggregates
+      @info = {}
       
       # populates the cube with the query rsult if it is provided.
       unless query_result.nil?
