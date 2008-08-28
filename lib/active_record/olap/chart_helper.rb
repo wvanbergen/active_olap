@@ -32,7 +32,15 @@ module ActiveRecord::Olap::ChartHelper
     
     chart = GoogleChart::PieChart.new(options[:size])
     chart.show_legend = options[:legend]
-    cube.each { |category, value| chart.data show_active_olap_category(category, :for => :pie_chart), value }
+    cube.each do |category, value| 
+      if category.info[:color]
+        color = category.info[:color]
+        color = $1 if color =~ /^\#([A-f0-9]{6})$/        
+        chart.data show_active_olap_category(category, :for => :pie_chart), value, color
+      else
+        chart.data show_active_olap_category(category, :for => :pie_chart), value
+      end
+    end
     image_tag(chart.to_url, html_options)
   end
 
@@ -47,7 +55,9 @@ module ActiveRecord::Olap::ChartHelper
     chart = GoogleChart::LineChart.new(options[:size])
     labels = cube.categories.map { |cat| show_active_olap_period(cat, :for => :line_chart) }
     
-    chart.data(show_active_olap_dimension(cube.dimension, :for => :line_chart), cube.to_a)
+    color = options[:color] || '000000'
+    color = $1 if color =~ /^\#([A-f0-9]{6})$/
+    chart.data(show_active_olap_dimension(cube.dimension, :for => :line_chart), cube.to_a, color)
     chart.show_legend = options[:legend]
     chart.axis :x, :labels => labels    
     chart.axis :y, :range  => [0, cube.raw_results.max]
@@ -59,14 +69,23 @@ module ActiveRecord::Olap::ChartHelper
     # set some default options
     options[:size]      ||= '550x300'
     options[:legend]      = true unless options.has_key?(:legend) && options[:legend] == false
-    colors = options.has_key?(:colors) ? options[:colors].clone : ['222222', '444444', '666666', '888888', 'aaaaaa']
+    colors = options.has_key?(:colors) ? options[:colors].clone : ['aaaaaa', 'aa0000', '00aa00', '0000aa', '222222']
     html_options[:alt]  ||= show_active_olap_cube(cube, :for => :line_chart)
     html_options[:size] ||= options[:size]
     
     chart = GoogleChart::LineChart.new(options[:size])
     
     cube.transpose.each do |cat, sub_cube| 
-      chart.data show_active_olap_category(cat, :for => :line_chart), sub_cube.raw_results, colors.shift || '000000'
+      color = cat.info[:color] || colors.shift || '666666'
+      color = $1 if color =~ /^\#([A-f0-9]{6})$/
+      chart.data show_active_olap_category(cat, :for => :line_chart), sub_cube.raw_results, color
+    end
+    
+    if options[:totals]
+      totals_label = options[:totals_label] || "Total"
+      totals_color = options[:totals_color] || "000000"
+      totals_color = $1 if totals_color =~ /^\#([A-f0-9]{6})$/
+      chart.data totals_label, cube.map { |cat, result| result.raw_results.sum }, totals_color
     end
     
     chart.show_legend = options[:legend]
