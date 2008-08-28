@@ -34,13 +34,13 @@ class ActiveRecord::Olap::Test < Test::Unit::TestCase
 
   def test_with_associations
     cube = OlapTest.olap_query :category, :aggregate => [:count_distinct, :total_price]
-    assert_valid_cube cube, [5]
+    assert_active_olap_cube cube, [5]
     assert_equal 1, cube[:no_category][:count_distinct]
     assert_equal 5.7, cube[:no_category][:total_price]
     assert_equal nil, cube[:first_cat][:total_price]    
     
     cube = OlapTest.olap_query(:in_association)
-    assert_valid_cube cube, [3]
+    assert_active_olap_cube cube, [3]
     assert_equal 1, cube[:first]
     assert_equal 1, cube[:second]
     assert_equal 4, cube[:other]        
@@ -48,10 +48,10 @@ class ActiveRecord::Olap::Test < Test::Unit::TestCase
   
   def test_time_dimension
     cube = OlapTest.olap_query(:the_time)
-    assert_valid_cube cube, [20]
+    assert_active_olap_cube cube, [20]
     
     cube = OlapTest.olap_query([:the_time, {:period_count => 10}])
-    assert_valid_cube cube, [10]
+    assert_active_olap_cube cube, [10]
   end
   
   def test_with_aggregates
@@ -97,7 +97,7 @@ class ActiveRecord::Olap::Test < Test::Unit::TestCase
   
   def test_with_overlap
     cube = OlapTest.olap_query(:with_overlap)
-    assert_valid_cube cube, [3]
+    assert_active_olap_cube cube, [3]
     
     assert_equal 2, cube[:like_23]
     assert_equal 3, cube[:starts_with_1]
@@ -145,7 +145,7 @@ class ActiveRecord::Olap::Test < Test::Unit::TestCase
   
     cube = OlapTest.olap_query(dimension_1, dimension_2)
 
-    assert_valid_cube  cube, [5, :unknown]
+    assert_active_olap_cube  cube, [5, :unknown]
     
     assert_equal 1, cube[:period_2, 'first_cat']
     assert_equal 0, cube[:period_2, 'second_cat']        
@@ -163,7 +163,7 @@ class ActiveRecord::Olap::Test < Test::Unit::TestCase
     dimension_3 = { :categories => { :string_like_2 => ["string_field LIKE ?", '%2%'] } }
     
     cube = OlapTest.olap_query(dimension_1, dimension_2, dimension_3)
-    assert_valid_cube cube, [2, :unknown, 2]
+    assert_active_olap_cube cube, [2, :unknown, 2]
     
     # check that every value is set
     assert_equal 1, cube[:datetime_field_set, 'first_cat',:string_like_2]
@@ -181,9 +181,9 @@ class ActiveRecord::Olap::Test < Test::Unit::TestCase
     
     # checking that drilling down results in cubes as well
     intermediate_cube = cube[:other]
-    assert_valid_cube intermediate_cube, [:unknown, 2]
-    assert_valid_cube cube[:other, 'second_cat'], [2]
-    assert_valid_cube cube[:other]['second_cat'], [2]
+    assert_active_olap_cube intermediate_cube, [:unknown, 2]
+    assert_active_olap_cube cube[:other, 'second_cat'], [2]
+    assert_active_olap_cube cube[:other]['second_cat'], [2]
 
     assert 1, intermediate_cube['second_cat'][:string_like_2]
     assert 1, cube[:other, 'second_cat'][:string_like_2]    
@@ -191,7 +191,7 @@ class ActiveRecord::Olap::Test < Test::Unit::TestCase
     # check for order preservation
     found_categories = []
     intermediate_cube.each do |category, drilled_down_cube|
-      assert_valid_cube drilled_down_cube, [2]
+      assert_active_olap_cube drilled_down_cube, [2]
       found_categories << category.label
     end
     assert_equal ['first_cat', 'second_cat', nil], found_categories
@@ -202,7 +202,7 @@ class ActiveRecord::Olap::Test < Test::Unit::TestCase
     dimension_2 = :category_field
   
     cube = OlapTest.olap_query(dimension_1, dimension_2)
-    assert_valid_cube cube, [2, :unknown]
+    assert_active_olap_cube cube, [2, :unknown]
   
     assert_equal 1, cube[:datetime_field_set, 'first_cat']
     assert_equal 1, cube[:datetime_field_set, 'second_cat']
@@ -212,7 +212,7 @@ class ActiveRecord::Olap::Test < Test::Unit::TestCase
     assert_equal 1, cube[:other, nil]
   
     cube = OlapTest.olap_query(dimension_2, dimension_1)
-    assert_valid_cube cube, [:unknown, 2]
+    assert_active_olap_cube cube, [:unknown, 2]
   
     assert_equal 1, cube['first_cat', :datetime_field_set]
     assert_equal 1, cube['second_cat', :datetime_field_set]
@@ -222,7 +222,7 @@ class ActiveRecord::Olap::Test < Test::Unit::TestCase
   
   def test_condition_field
     cube = OlapTest.olap_query(:category_field)
-    assert_valid_cube cube, [:unknown]
+    assert_active_olap_cube cube, [:unknown]
     
     assert_equal 1,   cube['first_cat']
     assert_equal 2,   cube['second_cat']
@@ -238,7 +238,7 @@ class ActiveRecord::Olap::Test < Test::Unit::TestCase
     dimension_2 = { :categories => { :string_like_2 => ["string_field LIKE ?", '%2%'] } }
     
     cube = OlapTest.olap_query(dimension_1, dimension_2)
-    assert_valid_cube cube, [2, 2]
+    assert_active_olap_cube cube, [2, 2]
     
     assert_equal 0, cube[:datetime_field_not_set,:other]
     assert_equal 2, cube[:datetime_field_not_set,:string_like_2]    
@@ -255,7 +255,7 @@ class ActiveRecord::Olap::Test < Test::Unit::TestCase
     dimension_2 = { :categories => { :string_like_2 => ["string_field LIKE ?", '%2%'], :other => false } }
     
     cube = OlapTest.olap_query(dimension_1, dimension_2)
-    assert_valid_cube cube, [1, 1]
+    assert_active_olap_cube cube, [1, 1]
     
     assert_nil cube[:other]
     assert_nil cube[:datetime_field_not_set,:other]
@@ -265,12 +265,12 @@ class ActiveRecord::Olap::Test < Test::Unit::TestCase
   
   def test_olap_query
     cube = OlapTest.olap_query :categories => { :datetime_field_not_set => {:datetime_field => nil} }
-    assert_valid_cube cube, [2]
+    assert_active_olap_cube cube, [2]
     assert_equal 2, cube[:datetime_field_not_set]
     assert_equal 2, cube[:other]
     
     cube = OlapTest.olap_query :categories => { :string_like_2 => ["string_field LIKE ?", '%2%'] }
-    assert_valid_cube cube, [2]
+    assert_active_olap_cube cube, [2]
     assert_equal 3, cube[:string_like_2]
     assert_equal 1, cube[:other]    
     
@@ -292,9 +292,12 @@ class ActiveRecord::Olap::Test < Test::Unit::TestCase
   end
    
   def test_olap_query_within_scope
+    
+    assert_active_olap_enabled OlapTest
+    
     assert_equal 3, OlapTest.int_field_33.count
     cube = OlapTest.int_field_33.olap_query :categories => { :datetime_field_not_set => {:datetime_field => nil} }
-    assert_valid_cube cube, [2]
+    assert_active_olap_cube cube, [2]
     assert_equal 1, cube[:datetime_field_not_set]
     assert_equal 2, cube[:other]   # the other record does not fall within the scope int_field_33
       

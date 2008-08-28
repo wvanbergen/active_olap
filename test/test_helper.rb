@@ -10,6 +10,11 @@ require 'action_controller/test_process'
 require "#{File.dirname(__FILE__)}/../init"
 
 module ActiveOlapOlapTestHelper
+  
+  def self.included(base)
+    base.send :include, ActiveRecord::Olap::Assertions
+  end
+  
   def create_db 
   
     ActiveRecord::Base.establish_connection(:adapter => "sqlite3", :dbfile => ":memory:")
@@ -52,18 +57,6 @@ module ActiveOlapOlapTestHelper
     ActiveRecord::Base.connection.tables.each do |table|
       ActiveRecord::Base.connection.drop_table(table)
     end 
-  end
-  
-  def assert_valid_cube(cube, dimensions = nil)
-    assert_kind_of ActiveRecord::Olap::Cube, cube
-    if dimensions.kind_of?(Array)
-      assert_equal dimensions.length, cube.depth
-      dimensions.each_with_index do |category_count, index|
-        assert_equal category_count, cube.dimensions[index].categories.length unless category_count == :unknown
-      end
-    elsif dimensions.kind_of?(Numeric)
-      assert_equal dimensions, cube.depth   
-    end
   end
 end
 
