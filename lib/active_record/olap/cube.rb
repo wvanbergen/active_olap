@@ -188,7 +188,7 @@ module ActiveRecord::Olap
           else
             # the last category is a normal category
             dimension_field_value = values["dimension_#{@dimensions.length - 1}"]
-            result[dim.category_index(dimension_field_value.to_sym)] = Aggregate.values(@aggregates, values)
+            result[dim.category_index(dimension_field_value.to_sym)] = Aggregate.values(@aggregates, values) unless dimension_field_value.nil?
           end
         end
       end
