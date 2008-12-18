@@ -14,7 +14,7 @@ module ActiveRecord::Olap
       
       if definition.kind_of?(Hash) && definition.has_key?(:expression)
         @conditions = definition[:expression]
-        @info = definition.delete_if { |k,v| k == :expression } 
+        @info = definition.reject { |k,v| k == :expression } 
       else
         @conditions = definition
       end
