@@ -55,6 +55,6 @@ to validate the results before they are used for decision making.
 
 About this plugin
 -----------------
-The plugin is written by Willem van Bergen for Floorplanner.com. It is BSD-licensed (see 
-LICENSE). If you have any questions or want to help out with the development of this plugin,
+The plugin is written by Willem van Bergen for Floorplanner.com. It is MIT-licensed (see 
+MIT-LICENSE). If you have any questions or want to help out with the development of this plugin,
 please contact me on willem AT vanbergen DOT org.

@@ -1,4 +1,5 @@
-module ActiveRecord::Olap
+module ActiveOLAP
+  
   class Dimension
 
     attr_reader :klass

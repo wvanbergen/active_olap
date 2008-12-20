@@ -1,4 +1,4 @@
-module ActiveRecord::Olap
+module ActiveOLAP
   
   class Configurator
     

@@ -1,8 +1,8 @@
 require "#{File.dirname(__FILE__)}/test_helper"
 
-class ActiveRecord::Olap::Test < Test::Unit::TestCase
+class ActiveOLAP::QueryTest < Test::Unit::TestCase
   
-  include ActiveOlapOlapTestHelper
+  include ActiveOlapTestHelper
   
   def setup
     create_db    
@@ -311,24 +311,24 @@ class ActiveRecord::Olap::Test < Test::Unit::TestCase
   # the actual SQL expression strings are connection specific,
   # For this test, they are in SQLite3 format
   def test_other_condition
-    dimension = ActiveRecord::Olap::Dimension.create(OlapTest, :categories => { :datetime_field_set => {:datetime_field => nil}})
-    assert_kind_of ActiveRecord::Olap::Dimension, dimension
+    dimension = ActiveOLAP::Dimension.create(OlapTest, :categories => { :datetime_field_set => {:datetime_field => nil}})
+    assert_kind_of ActiveOLAP::Dimension, dimension
     assert_equal '((("olap_tests"."datetime_field" IS NULL)) IS NULL OR NOT(("olap_tests"."datetime_field" IS NULL)))', dimension[:other].to_sanitized_sql
     
     dimension = { :categories => { :datetime_field_set => {:datetime_field => nil} } }
-    dimension = ActiveRecord::Olap::Dimension.create(OlapTest, dimension)
+    dimension = ActiveOLAP::Dimension.create(OlapTest, dimension)
     assert_kind_of String, dimension[:other].conditions
     
     dimension = { :categories => { :other => false, :datetime_field_set => {:datetime_field => nil} } }
-    dimension = ActiveRecord::Olap::Dimension.create(OlapTest, dimension)
+    dimension = ActiveOLAP::Dimension.create(OlapTest, dimension)
     assert_nil dimension[:other]
     
     dimension = { :categories => { :other => nil, :datetime_field_set => {:datetime_field => nil} } }
-    dimension = ActiveRecord::Olap::Dimension.create(OlapTest, dimension)
+    dimension = ActiveOLAP::Dimension.create(OlapTest, dimension)
     assert_nil dimension[:other]
     
     dimension = { :categories => { :other => ['willem = ?', "grea't"], :datetime_field_set => {:datetime_field => nil} } }
-    dimension = ActiveRecord::Olap::Dimension.create(OlapTest, dimension)
+    dimension = ActiveOLAP::Dimension.create(OlapTest, dimension)
     assert_equal ["willem = ?", "grea't"], dimension[:other].conditions
     assert_equal "willem = 'grea''t'", dimension[:other].to_sanitized_sql
   end

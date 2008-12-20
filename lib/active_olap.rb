@@ -1,8 +1,8 @@
-module ActiveRecord::Olap
+module ActiveOLAP
   
   def enable_active_olap(config = nil, &block)
 
-    self.class_eval { extend ClassMethods }
+    self.send(:extend, ClassMethods)
     self.named_scope :olap_drilldown, lambda { |hash| self.olap_drilldown_finder_options(hash) }    
     
     self.cattr_accessor :active_olap_dimensions, :active_olap_aggregates
@@ -84,3 +84,18 @@ module ActiveRecord::Olap
   end
   
 end
+
+
+require 'active_olap/dimension'
+require 'active_olap/category'
+require 'active_olap/aggregate'
+require 'active_olap/cube'
+require 'active_olap/configurator'
+
+require 'active_olap/helpers/display_helper'
+require 'active_olap/helpers/table_helper'
+require 'active_olap/helpers/chart_helper'
+require 'active_olap/helpers/form_helper'
+
+# inlcude the AcvtiveOLAP module in ActiveRecord::Base
+ActiveRecord::Base.send(:extend, ActiveOLAP)

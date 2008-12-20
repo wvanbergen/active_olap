@@ -1,16 +1,19 @@
 require "#{File.dirname(__FILE__)}/test_helper"
 
-class ActiveRecord::Olap::HelperTest < Test::Unit::TestCase
+require 'action_view'
+
+class ActiveOLAP::HelperTest < Test::Unit::TestCase
   
-  include ActiveOlapOlapTestHelper
+  include ActiveOlapTestHelper
   
   # include some helper modules from ActionView
   include ActionView::Helpers::CaptureHelper
   include ActionView::Helpers::TagHelper
 
   # include the Active OLAP helper functions
-  include ActiveRecord::Olap::TableHelper
+  include ActiveOLAP::Helpers::TableHelper
 
+  attr_accessor :output_buffer
 
   def setup
     create_db && create_corpus
