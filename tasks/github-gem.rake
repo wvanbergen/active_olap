@@ -100,8 +100,8 @@ module Rake
     
     def verify_clean_status(on_branch = nil)
       lines = run_command('git status')
-      raise "You are currently not working in the #{on_branch} branch!" unless on_branch.nil? || (/^\# On branch (.+)/ =~ lines[0] && $1 == on_branch)
-      raise "Your master branch contains modifications!" unless /^nothing to commit \(working directory clean\)/ =~ lines[1]
+      raise "You are currently not working in the #{on_branch} branch!" unless on_branch.nil? || (/^\# On branch (.+)/ =~ lines.first && $1 == on_branch)
+      raise "Your master branch contains modifications!" unless /^nothing to commit \(working directory clean\)/ =~ lines.last
     end
     
     def verify_version(new_version)
