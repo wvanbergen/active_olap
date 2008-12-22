@@ -28,6 +28,12 @@ module Rake
         desc "Builds a ruby gem for #{@name}"
         task(:build => [:manifest]) { build_task }
         
+        desc "Installs the ruby gem for #{@name} locally"
+        task(:install => [:build]) { install_task }
+        
+        desc "Uninstalls the ruby gem for #{@name} locally"
+        task(:uninstall) { uninstall_task }             
+        
         desc "Releases a new version of #{@name}"
         task(:release) { release_task } 
       end
@@ -111,10 +117,6 @@ module Rake
       raise "This version number (#{new_version}) is not higher than the highest tagged version (#{newest_version})" if !newest_version.nil? && newest_version >= Gem::Version.new(new_version.to_s)
     end
 
-    def version_task
-      
-    end
-        
     def manifest_task
       verify_current_branch('master')
       
@@ -145,6 +147,16 @@ module Rake
       sh "gem build #{gemspec_file}"
     end
     
+    def install_task
+      raise "#{name} .gem file not found" unless File.exist?("#{name}-#{specification.version}.gem")
+      sh "gem install #{name}-#{specification.version}.gem"
+    end
+    
+    def uninstall_task
+      raise "#{name} .gem file not found" unless File.exist?("#{name}-#{specification.version}.gem")
+      sh "gem uninstall #{name}"
+    end    
+    
     def release_task
       verify_clean_status('master')
       verify_version(ENV['VERSION'] || @specification.version)
@@ -159,8 +171,6 @@ module Rake
       git_create_tag("#{@name}-#{@specification.version}", "Tagged version #{@specification.version}")
       git_push('origin', 'master', [:tags])
     end
-    
-    
   end
 end
 
