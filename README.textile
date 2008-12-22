@@ -1,20 +1,19 @@
-Active OLAP
-===========
+h1. Active OLAP
 
 This Rails plugin makes it easy to add an OLAP interface to your application, which is 
 great for administration interfaces. Its main uses are collection information about the
 usage of your application and detecting inconsistencies and problems in your data.
 
 This plugin provides:
-- The main functions for OLAP querying: olap_query and olap_drilldown. These functions
-  must be enabled for your model by calling enable_active_olap on your model class.
-- Functions to easily define dimension, categories and aggregates to use in your
-  OLAP queries.
+ - The main functions for OLAP querying: olap_query and olap_drilldown. These functions
+   must be enabled for your model by calling enable_active_olap on your model class.
+ - Functions to easily define dimension, categories and aggregates to use in your
+   OLAP queries.
 
 In the future, the following functionality is planned to be included:
-- A helper module to generate tables and charts for the query results. The gchartrb gem
-  is needed for charts, as they are generated using the Google charts API.
-- A controller that can be included in your Rails projects to get started quickly.
+ - A helper module to generate tables and charts for the query results. The gchartrb gem
+   is needed for charts, as they are generated using the Google charts API.
+ - A controller that can be included in your Rails projects to get started quickly.
 
 More information about the concepts and usage of this plugin, see the Active OLAP Wiki on
 GitHub: http://github.com/wvanbergen/active_olap/wikis. I have blogged about this plugin 
@@ -23,21 +22,21 @@ if you want to get involved or tinker with the code, you can access the reposito
 http://github.com/wvanbergen/active_olap/tree.
 
 
-Why use this plugin?
---------------------
+h2. Why use this plugin?
+
 This plugin simply runs SQL queries using the find-method of ActiveRecord. You might be 
 wondering why you would need a plugin for that. 
 
 First of all, it makes your life as a developer easier:
-- This plugin generates the nasty SQL expressions for you using standard compliant SQL, 
-  handles issues with SQL NULL values and makes sure the results have a consistent format.
-- You can define dimensions and aggregates that are "safe to use" or known to yield useful
-  results. Once dimensions and aggregates are defined, they can be combined at will safely 
-  and without any coding effort, so it is suitable for management. :-)
+ - This plugin generates the nasty SQL expressions for you using standard compliant SQL, 
+   handles issues with SQL NULL values and makes sure the results have a consistent format.
+ - You can define dimensions and aggregates that are "safe to use" or known to yield useful
+   results. Once dimensions and aggregates are defined, they can be combined at will safely 
+   and without any coding effort, so it is suitable for management. :-)
 
 
-Requirements
-------------
+h2. Requirements
+
 This plugin is usable for any ActiveRecord-based model. Because named_scope is used for the 
 implementation, Rails 2.1 is required for it to work. It is tested to work with MySQL 5 and
 SQLite 3 but should work with other databases as well, as it only generates standard 
@@ -53,8 +52,8 @@ with it, interpreting the results is hard and mistakes are easily made. At least
 to validate the results before they are used for decision making.
 
 
-About this plugin
------------------
+h2. About this plugin
+
 The plugin is written by Willem van Bergen for Floorplanner.com. It is MIT-licensed (see 
 MIT-LICENSE). If you have any questions or want to help out with the development of this plugin,
 please contact me on willem AT vanbergen DOT org.
