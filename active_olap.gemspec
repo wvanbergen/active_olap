@@ -1,7 +1,7 @@
 Gem::Specification.new do |s|
   s.name    = 'active_olap'
   s.version = '0.0.1'
-  s.date    = '2008-12-19'
+  s.date    = '2008-12-22'
   
   s.summary     = "Extend ActiveRecord with OLAP query functionality"
   s.description = "Extends ActiveRecord with functionality to perform OLAP queries on your data. Includes helper method to ease displaying the results."
@@ -10,6 +10,6 @@ Gem::Specification.new do |s|
   s.email    = ['willem@vanbergen.org']
   s.homepage = 'http://github.com/wvanbergen/active_olap/wikis'
   
-  s.files = %w(CHANGELOG LICENSE README.textile Rakefile TODO init.rb lib lib/scoped_search lib/scoped_search.rb lib/scoped_search/query_conditions_builder.rb lib/scoped_search/query_language_parser.rb lib/scoped_search/reg_tokens.rb test test/query_conditions_builder_test.rb test/query_language_test.rb test/search_for_test.rb test/tasks.rake test/test_helper.rb)
-  s.test_files = %w(test/query_conditions_builder_test.rb test/query_language_test.rb test/search_for_test.rb)
+  s.files = %w(MIT-LICENSE README.textile Rakefile init.rb lib lib/active_olap lib/active_olap.rb lib/active_olap/aggregate.rb lib/active_olap/category.rb lib/active_olap/configurator.rb lib/active_olap/cube.rb lib/active_olap/dimension.rb lib/active_olap/helpers lib/active_olap/helpers/chart_helper.rb lib/active_olap/helpers/display_helper.rb lib/active_olap/helpers/form_helper.rb lib/active_olap/helpers/table_helper.rb lib/active_olap/test lib/active_olap/test/assertions.rb spec spec/integration spec/integration/active_olap_spec.rb spec/spec_helper.rb spec/unit spec/unit/cube_spec.rb tasks tasks/github-gem.rake tasks/spec.rake tasks/test.rake test test/active_olap_test.rb test/helper.rb test/helper_modules_test.rb)
+  s.test_files = %w(test/active_olap_test.rb test/helper_modules_test.rb)
 end

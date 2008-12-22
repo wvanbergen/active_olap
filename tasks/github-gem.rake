@@ -22,7 +22,7 @@ module Rake
 
     def register_all_tasks!
       namespace(:gem) do
-        desc "Creates a manifest file for this gem"
+        desc "Updates the file lists for this gem"
         task(:manifest) { manifest_task }
         
         desc "Builds a ruby gem for #{@name}"
