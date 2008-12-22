@@ -99,7 +99,9 @@ module Rake
     end
     
     def verify_clean_status(on_branch = nil)
+      sh "git fetch"
       lines = run_command('git status')
+      raise "You don't have the most recent version available. Run git pull first." if /^\# Your branch is behind/ =~ lines[1]
       raise "You are currently not working in the #{on_branch} branch!" unless on_branch.nil? || (/^\# On branch (.+)/ =~ lines.first && $1 == on_branch)
       raise "Your master branch contains modifications!" unless /^nothing to commit \(working directory clean\)/ =~ lines.last
     end
