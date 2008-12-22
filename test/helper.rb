@@ -23,6 +23,7 @@ module ActiveOlapTestHelper
         t.integer  :int_field
         t.string   :category_field
         t.datetime :datetime_field
+        t.integer  :olap_category_id
         t.timestamps
       end
     
@@ -33,14 +34,20 @@ module ActiveOlapTestHelper
         t.timestamps
       end
     
-    
+      create_table :olap_categories do |t|
+        t.string :category
+      end
     end
   end
   
   def create_corpus
-    OlapTest.create!({ :string_field => '123', :int_field => 33, :category_field => 'first_cat',  :datetime_field => 2.day.ago })
-    OlapTest.create!({ :string_field => '123', :int_field => 44, :category_field => 'second_cat', :datetime_field => nil })
-    OlapTest.create!({ :string_field => '',    :int_field => 33, :category_field => 'second_cat', :datetime_field => 4.days.ago })    
+    
+    category_1 = OlapCategory.create(:category => 'first')
+    category_2 = OlapCategory.create(:category => 'second')
+        
+    OlapTest.create!({ :string_field => '123', :int_field => 33, :category_field => 'first_cat',  :datetime_field => 2.day.ago, :olap_category =>  category_1})
+    OlapTest.create!({ :string_field => '123', :int_field => 44, :category_field => 'second_cat', :datetime_field => nil, :olap_category =>  category_2 })
+    OlapTest.create!({ :string_field => '',    :int_field => 33, :category_field => 'second_cat', :datetime_field => 4.days.ago, :olap_category =>  category_2 })    
     with_assocs = OlapTest.create!({ :string_field => '12',  :int_field => 33, :category_field => nil,  :datetime_field => nil })
     
     with_assocs.olap_associations.create!({:category => 'first',  :price => 1.2})
@@ -60,6 +67,7 @@ end
 
 class OlapTest < ActiveRecord::Base  
   
+  belongs_to :olap_category
   has_many :olap_associations
   named_scope :int_field_33, :conditions => {:int_field => 33}
   
@@ -87,17 +95,21 @@ class OlapTest < ActiveRecord::Base
         }
       
     olap.dimension :in_association, :overlap => true, :categories => {
-          :first  => "olap_associations.category = 'first'",
-          :second => "olap_associations.category = 'second'"          
-        }, :joins => 'LEFT JOIN olap_associations ON olap_associations.olap_test_id = olap_tests.id'
-        
+          :first  => { :olap_associations => { :category => 'first'  } },
+          :second => { :olap_associations => { :category => 'second' } }     
+        }, :joins => [:olap_associations]
+          
     olap.aggregate :sum_int, :sum_int_field
     olap.aggregate :avg_int_field
-    olap.aggregate :total_price, 'SUM(olap_associations.price)', :joins => 'LEFT JOIN olap_associations ON olap_associations.olap_test_id = olap_tests.id'
+    olap.aggregate :total_price, 'SUM(olap_associations.price)', :joins => [:olap_associations] #'LEFT JOIN olap_associations ON olap_associations.olap_test_id = olap_tests.id'
   end
   
 end
 
 class OlapAssociation < ActiveRecord::Base
   belongs_to :olap_test
+end
+
+class OlapCategory < ActiveRecord::Base
+  has_many :olap_tests
 end

@@ -46,7 +46,7 @@ module ActiveOLAP
 
       conditions = self.send(:merge_conditions, *dimensions.map(&:conditions))
       joins = (dimensions.map(&:joins) + aggregates.map(&:joins)).flatten.uniq
-      joins_clause = joins.empty? ? nil : joins.join(' ')
+      joins_clause = joins.empty? ? nil : self.send(:merge_joins, *joins)
 
       selects = aggregates.map { |agg| agg.to_sanitized_sql }
       groups  = []
@@ -66,9 +66,14 @@ module ActiveOLAP
     
       group_clause = groups.length > 0 ? groups.join(', ') : nil
       # TODO: having
+      
+      olap_temporarily_set_join_type if joins_clause
+      
       query_result = self.scoped(:conditions => conditions).find(:all, :select => selects.join(', '), 
           :joins => joins_clause, :group => group_clause, :order => group_clause)  
-
+      
+      olap_temporarily_reset_join_type if joins_clause
+      
       return Cube.new(self, dimensions, aggregates, query_result)
     end   
   end
@@ -81,6 +86,16 @@ module ActiveOLAP
     # returns an options hash to create a scope (the named_scope :olap_drilldown)
     conditions = options.map { |dim, cat| Dimension.create(self, dim).sanitized_sql_for(cat) }
     { :select => connection.quote_table_name(table_name) + '.*', :conditions => self.send(:merge_conditions, *conditions) }
+  end
+  
+  # temporarily use LEFT JOINs for specified :joins
+  def olap_temporarily_set_join_type
+    ActiveRecord::Associations::ClassMethods::InnerJoinDependency::InnerJoinAssociation.send(:define_method, :join_type) { "LEFT OUTER JOIN" }
+  end
+
+  # reset to INNER JOINs after query has finished
+  def olap_temporarily_reset_join_type
+    ActiveRecord::Associations::ClassMethods::InnerJoinDependency::InnerJoinAssociation.send(:define_method, :join_type) { "INNER JOIN" }
   end
   
 end
