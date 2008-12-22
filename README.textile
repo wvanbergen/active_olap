@@ -5,15 +5,15 @@ great for administration interfaces. Its main uses are collection information ab
 usage of your application and detecting inconsistencies and problems in your data.
 
 This plugin provides:
- - The main functions for OLAP querying: olap_query and olap_drilldown. These functions
+* The main functions for OLAP querying: olap_query and olap_drilldown. These functions
    must be enabled for your model by calling enable_active_olap on your model class.
- - Functions to easily define dimension, categories and aggregates to use in your
+* Functions to easily define dimension, categories and aggregates to use in your
    OLAP queries.
 
 In the future, the following functionality is planned to be included:
- - A helper module to generate tables and charts for the query results. The gchartrb gem
+* A helper module to generate tables and charts for the query results. The gchartrb gem
    is needed for charts, as they are generated using the Google charts API.
- - A controller that can be included in your Rails projects to get started quickly.
+* A controller that can be included in your Rails projects to get started quickly.
 
 More information about the concepts and usage of this plugin, see the Active OLAP Wiki on
 GitHub: http://github.com/wvanbergen/active_olap/wikis. I have blogged about this plugin 
@@ -28,9 +28,9 @@ This plugin simply runs SQL queries using the find-method of ActiveRecord. You m
 wondering why you would need a plugin for that. 
 
 First of all, it makes your life as a developer easier:
- - This plugin generates the nasty SQL expressions for you using standard compliant SQL, 
+* This plugin generates the nasty SQL expressions for you using standard compliant SQL, 
    handles issues with SQL NULL values and makes sure the results have a consistent format.
- - You can define dimensions and aggregates that are "safe to use" or known to yield useful
+* You can define dimensions and aggregates that are "safe to use" or known to yield useful
    results. Once dimensions and aggregates are defined, they can be combined at will safely 
    and without any coding effort, so it is suitable for management. :-)
 
