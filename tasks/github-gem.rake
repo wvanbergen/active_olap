@@ -105,8 +105,8 @@ module Rake
     end
     
     def verify_version(new_version)
-      newest_version = run_command('git tag').map { |tag| tag.split(name + '-').last }.compact.map { |v| Gem::Version.new(v) }.max      
-      raise "This version number (#{new_version}) is not higher than the highest tagged version (#{newest_version})" if newest_version >= Gem::Version.new(new_version.to_s)
+      newest_version = run_command('git tag').map { |tag| tag.split(name + '-').last }.compact.map { |v| Gem::Version.new(v) }.max
+      raise "This version number (#{new_version}) is not higher than the highest tagged version (#{newest_version})" if !newest_version.nil? && newest_version >= Gem::Version.new(new_version.to_s)
     end
 
     def version_task
