@@ -1,7 +1,7 @@
 Gem::Specification.new do |s|
   s.name    = 'active_olap'
-  s.version = '0.0.1'
-  s.date    = '2008-12-22'
+  s.version = '0.0.2'
+  s.date    = '2008-12-23'
   
   s.summary     = "Extend ActiveRecord with OLAP query functionality"
   s.description = "Extends ActiveRecord with functionality to perform OLAP queries on your data. Includes helper method to ease displaying the results."
