@@ -27,7 +27,7 @@ module ActiveOLAP::Helpers
       end
     
       case options[:for]
-      when :line_chart; end_time 
+      when :line_chart; begin_time 
       else; "#{begin_time} - #{end_time}"
       end
     end

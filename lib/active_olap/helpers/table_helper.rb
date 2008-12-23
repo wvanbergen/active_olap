@@ -11,25 +11,35 @@ module ActiveOLAP::Helpers
       raise "Only suitable for 2D cubes" unless cube.depth == 2
       raise "Only 1 aggregate supported" if cube.aggregates.length > 1
     
-      content_tag(:table, html_options.merge(:class => "active-olap table 2d")) do    
+      html = content_tag(:table, html_options.merge(:class => "active-olap table 2d")) do    
         content_tag(:thead) do
-          content_tag(:tr) do
+          content_tag(:tr, :class => 'category') do
             content_tag(:th, '&nbsp;') + "\n\t" +
             cube.dimensions[1].categories.map do |category|
-              content_tag(:th, show_active_olap_category(category, :for => :matrix), :class => 'category', :id => "category-#{category.label}")
+              content_tag(:th, show_active_olap_category(category, :for => :matrix), :class => 'column', :id => "category-#{category.label}")
             end.join
           end
         end << "\n" <<
         content_tag(:tbody) do
           cube.map do |category, sub_cube|
-            content_tag(:tr, :class => 'category', :id => "category-#{category.label}") do
-              "\t\n" + content_tag(:th, show_active_olap_category(category, :for => :matrix)) + 
+            content_tag(:tr) do
+              "\t\n" + content_tag(:th, show_active_olap_category(category, :class => 'category row', :id => "category-#{category.label}", :for => :matrix)) + 
               sub_cube.map do |category, value|
                 content_tag(:td, show_active_olap_value(category, cube.aggregates.first, value, :for => :matrix), :class => 'value')
               end.join
             end
           end
         end
+      end
+      
+      if options[:totals]
+        html << content_tag(:tr, :class => 'totals') do
+          "\t\n" + content_tag(:th, '&nbsp;') + 
+          cube.map do |sub_cube, value|
+            content_tag(:td, show_active_olap_value(sub_cube.category, cube.aggregates.first, cube.sum, :for => :matrix), :class => 'value')
+          end.join
+        end
+        
       end
     end
 
