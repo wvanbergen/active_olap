@@ -28,7 +28,7 @@ wondering why you would need a plugin for that.
 
 First of all, it makes your life as a developer easier:
 * This plugin generates the nasty SQL expressions for you using standard compliant SQL, 
-   handles issues with SQL NULL values and makes sure the results have a consistent format.
+  handles issues with SQL NULL values and makes sure the results have a consistent format.
 * You can define dimensions and aggregates that are "safe to use" or known to yield useful
   results. Once dimensions and aggregates are defined, they can be combined at will safely 
   and without any coding effort, so it is suitable for management. :-)
@@ -51,12 +51,12 @@ implementation, Rails 2.1 is required for it to work. It is tested to work with 
 SQLite 3 but should work with other databases as well, as it only generates standard 
 compliant SQL queries.
 
-*Warning:* OLAP queries can be heavy on the database. They can impact the performance of your
+<b>Warning:</b> OLAP queries can be heavy on the database. They can impact the performance of your
 application if you perform them on the same server or database. Setting good indices is 
 helpful, but it may be a good idea to use a copy of the production database on another 
 server for these heavy queries.
 
-*Another warning:* while this plugin makes it easy to perform OLAP queries and play around
+<b>Another warning:</b> while this plugin makes it easy to perform OLAP queries and play around
 with it, interpreting the results is hard and mistakes are easily made. At least, make sure
 to validate the results before they are used for decision making.
 
