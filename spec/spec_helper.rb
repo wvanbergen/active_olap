@@ -10,5 +10,4 @@ require 'spec'
 
 # Load Active OLAP files
 require 'active_record'
-require File.dirname(__FILE__) + '/../lib/active_record/olap'
-require File.dirname(__FILE__) + '/../lib/active_record/olap/cube'
+require 'active_olap'
