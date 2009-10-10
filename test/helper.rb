@@ -15,8 +15,9 @@ module ActiveOlapTestHelper
   
   def create_db 
   
-    ActiveRecord::Base.establish_connection(:adapter => "sqlite3", :dbfile => ":memory:")
-
+    ActiveRecord::Base.establish_connection(:adapter => "sqlite3", :database => ":memory:")
+    ActiveRecord::Migration.verbose = false
+    
     ActiveRecord::Schema.define(:version => 1) do
       create_table :olap_tests do |t|
         t.string   :string_field
