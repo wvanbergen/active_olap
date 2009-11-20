@@ -118,7 +118,7 @@ module ActiveOLAP
     end
     
     def default_value
-      (@function == :count) ? 0 : nil # TODO: better?
+      (@function == :count) ? 0 : 0.0 # TODO: better?
     end
     
     def self.values(aggregates, source)
@@ -144,5 +144,4 @@ module ActiveOLAP
       @klass.connection.send(:quote_table_name, @klass.table_name)
     end
   end
-  
 end

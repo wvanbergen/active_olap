@@ -61,7 +61,7 @@ module ActiveOLAP::Helpers
       chart.data(show_active_olap_dimension(cube.dimension, :for => :line_chart), cube.to_a, color)
       chart.show_legend = options[:legend]
       chart.axis :x, :labels => labels    
-      chart.axis :y, :range  => [0, cube.raw_results.max]
+      chart.axis :y, :range  => [0, cube.raw_results.compact.max]
       image_tag(chart.to_url, html_options)
     end
 
@@ -92,7 +92,7 @@ module ActiveOLAP::Helpers
       chart.show_legend = options[:legend]
       labels = cube.categories.map { |cat| show_active_olap_period(cat, :for => :line_chart) }    
       chart.axis :x, :labels => labels        
-      chart.axis :y, :range  => [0, cube.raw_results.flatten.max]
+      chart.axis :y, :range  => [0, cube.raw_results.flatten.compact.max]
       image_tag(chart.to_url, html_options)
     end  
   end
