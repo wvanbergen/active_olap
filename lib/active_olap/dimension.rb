@@ -57,7 +57,10 @@ module ActiveOLAP
     # Builds a CASE expression for this dimension.
     def to_case_expression(variable_name)
       if @category_field
-        "#{@klass.connection.send(:quote_column_name, @category_field)} AS #{@klass.connection.send(:quote_column_name, variable_name)}"
+        quoted_field_name = @klass.connection.send(:quote_table_name, @klass.table_name) + '.' + 
+                                      @klass.connection.send(:quote_column_name, @category_field)
+                                      
+        "#{quoted_field_name} AS #{@klass.connection.send(:quote_column_name, variable_name)}"
       else
         whens = @categories.map { |category| @klass.send(:sanitize_sql, ["WHEN (#{category.to_sanitized_sql}) THEN ?", category.label.to_s]) }
         "CASE #{whens.join(' ')} ELSE NULL END AS #{@klass.connection.send(:quote_column_name, variable_name)}";
