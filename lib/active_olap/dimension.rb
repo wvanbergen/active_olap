@@ -62,6 +62,7 @@ module ActiveOLAP
                                       
         "#{quoted_field_name} AS #{@klass.connection.send(:quote_column_name, variable_name)}"
       else
+        raise "This dimension does not have any categories!" if @categories.empty?
         whens = @categories.map { |category| @klass.send(:sanitize_sql, ["WHEN (#{category.to_sanitized_sql}) THEN ?", category.label.to_s]) }
         "CASE #{whens.join(' ')} ELSE NULL END AS #{@klass.connection.send(:quote_column_name, variable_name)}";
       end
