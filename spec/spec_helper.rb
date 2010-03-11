@@ -1,20 +1,32 @@
 # load RSpec libraries
 require 'rubygems'
+
+require 'datamapper'
+require 'data_objects'
+require 'do_sqlite3'
+require 'do_mysql'
+
 require 'spec'
 
-$:.unshift(File.dirname(__FILE__) + '/../lib')
+# Require helper files
+Dir[File.dirname(__FILE__) + "/spec_helpers/*.rb"].each { |f| require f }
 
 # Load Active OLAP files
+$:.unshift(File.dirname(__FILE__) + '/../lib')
 require 'active_olap'
 
-module Debugging
-  def pre(string)
-    puts "<pre>"
-    puts string
-    puts "</pre>"
-  end
-end
 
 Spec::Runner.configure do |configuration|
   configuration.include Debugging
+  
+  configuration.before(:all) do
+    DataMapper.setup(:default, 'sqlite3::memory:')
+    DataMapper.auto_migrate!
+    
+    ActiveOLAP.connection = DataMapper.repository(:default).adapter.send(:open_connection)
+  end
+  
+  configuration.after(:all) do
+    DataMapper.repository(:default).adapter.send(:close_connection, ActiveOLAP.connection)
+  end
 end
