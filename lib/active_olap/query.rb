@@ -12,6 +12,10 @@ class ActiveOLAP::Query
     @aggregates = []
   end
   
+  def self.create(body, default_filter = nil)
+    new(body, default_filter)
+  end
+  
   def drilldown_on(dimension, drilldown_options = {})
     drilldowns << ActiveOLAP::Drilldown.new(self, dimension, drilldown_options)
   end
@@ -72,11 +76,15 @@ class ActiveOLAP::Query
     filters.each { |filter| selections << filter.expression(variables) }
     selections = selections.flatten.compact
     
-    projections_clause = projections.map { |name, expr| "#{expr} AS #{name}" }.join(",\n       ")
+    projections_clause = projections.map { |name, expr| "#{format_select_sql(expr)} AS #{name}" }.join(",\n       ")
     sql = "SELECT #{projections_clause}\n  FROM #{body}"
     sql << "\n WHERE (#{selections.join(")\n   AND (")})" if selections.any?
     sql << "\n GROUP BY #{drilldowns.map(&:variable).join(', ')}" if drilldowns.any?
     sql << "\n HAVING (#{havings.join(') AND (')})" if havings.any?
     sql
+  end
+  
+  def format_select_sql(sql)
+    sql.to_s.gsub(/\r?\n/, "\n       ")
   end
 end

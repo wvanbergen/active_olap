@@ -6,7 +6,11 @@ class ActiveOLAP::Dimension
   
   attr_accessor :variable
 
-  def self.create(type, variable, attributes = {})
+  def self.create(*args)
+    self.new(*args)
+  end
+
+  def self.build(type, variable, attributes = {})
     klass = self.const_get(type.to_s.camelize)
     dimension = klass.new(variable)
     dimension.attributes = attributes
@@ -36,5 +40,11 @@ class ActiveOLAP::Dimension
   
   def filter_expression(options = {}, variables = {})
     raise "Please implement the filter_expression method in the #{self.class.name} dimension subclass!"
+  end
+  
+  def case_statement(values, else_value = nil)
+    else_value = else_value ? "'#{else_value}'" : 'NULL'
+    whens = values.map { |v, e| "WHEN #{e} THEN '#{v}'" }
+    "CASE\n  #{whens.join("\n  ")}\n  ELSE #{else_value}\nEND"
   end
 end

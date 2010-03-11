@@ -6,6 +6,10 @@ class ActiveOLAP::Aggregate
     @variable, @expression = variable, expression
   end
   
+  def self.create(variable, expression)
+    new(variable, expression)
+  end
+  
   def self.count(value = '*')
     new("count_#{value.to_s.gsub(/\W+/, '_')}".sub(/_+$/, '').to_sym, "COUNT(#{value})")
   end

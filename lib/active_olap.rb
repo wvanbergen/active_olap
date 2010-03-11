@@ -1,26 +1,40 @@
 require 'active_support'
 require 'data_objects'
+require 'benchmark'
 
 module ActiveOLAP
+  extend self
   
-  def self.const_missing(const)
+  attr_accessor :connection
+  
+  # RESOLVING CONSTANTS
+  
+  def const_missing(const)
     load_missing_constant(self, const)
   end
   
-  def self.load_missing_constant(namespace, const)
+  def load_missing_constant(namespace, const)
     require "#{namespace}::#{const}".underscore
     namespace.const_get(const)
   end
   
-  def self.query(*args)
-    ActiveOLAP::Query.new(*args)
+  # RUNNING QUERIES
+  
+  def execute(query)
+    ActiveOLAP::Runner.new(query).perform
   end
   
-  def self.aggregate(*args)
-    ActiveOLAP::Aggregate.new(*args)
+  # CONSTRUCTORS
+  
+  def query(*args)
+    ActiveOLAP::Query.create(*args)
   end
   
-  def self.dimension(type, variable, options = {})
-    ActiveOLAP::Dimension.create(type, variable, options)
+  def aggregate(*args)
+    ActiveOLAP::Aggregate.create(*args)
+  end
+  
+  def dimension(*args)
+    ActiveOLAP::Dimension.create(*args)
   end
 end
