@@ -11,13 +11,13 @@ class ActiveOLAP::Dimension::Expression < ActiveOLAP::Dimension
     expression.to_s
   end
   
-  def filter_expression(options = {}, variables = {})
-    values = case options
-      when Hash  then options[:values]
-      when Array then options
-      else [options]
-    end
-    
-    "#{expression} IN ('#{values.join("', '")}')"
-  end
+  # def filter_expression(options = {}, variables = {})
+  #   values = case options
+  #     when Hash  then options[:values]
+  #     when Array then options
+  #     else [options]
+  #   end
+  #   
+  #   "#{expression} IN ('#{values.join("', '")}')"
+  # end
 end

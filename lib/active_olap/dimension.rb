@@ -38,8 +38,14 @@ class ActiveOLAP::Dimension
     nil
   end
   
-  def filter_expression(options = {}, variables = {})
-    raise "Please implement the filter_expression method in the #{self.class.name} dimension subclass!"
+  def filter_expression(options = {}, values = nil, variables = {})
+    if !has_overlap?
+      raise "No filter values provided!" if values.nil?
+      "(#{drilldown_value_expression(options, variables)}) IN ('#{values.to_a.join("', '")}')"
+    else
+      raise "Please implement filter_expression in your dimension class!"
+    end
+    
   end
   
   def case_statement(values, else_value = nil)

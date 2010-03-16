@@ -20,8 +20,8 @@ class ActiveOLAP::Query
     drilldowns << ActiveOLAP::Drilldown.new(self, dimension, drilldown_options)
   end
   
-  def filter_on(dimension, filter_options = {})
-    filters << ActiveOLAP::Filter.new(self, dimension, filter_options)
+  def filter_on(dimension, values, filter_options = {})
+    filters << ActiveOLAP::Filter.new(self, dimension, values, filter_options)
   end
   
   def calculate(aggregate)
@@ -70,13 +70,18 @@ class ActiveOLAP::Query
       selections << drilldown.filter_expression(variables)
     end
     
-    aggregates << ActiveOLAP::Aggregate.count if aggregates.empty?
+    # aggregates << ActiveOLAP::Aggregate.count if aggregates.empty?
     aggregates.each { |agg| projections[agg.variable] = agg.expression }
     
     filters.each { |filter| selections << filter.expression(variables) }
     selections = selections.flatten.compact
     
-    projections_clause = projections.map { |name, expr| "#{format_select_sql(expr)} AS #{name}" }.join(",\n       ")
+    if projections.empty?
+      projections_clause = '*'
+    else
+      projections_clause = projections.map { |name, expr| "#{format_select_sql(expr)} AS #{name}" }.join(",\n       ")
+    end
+    
     sql = "SELECT #{projections_clause}\n  FROM #{body}"
     sql << "\n WHERE (#{selections.join(")\n   AND (")})" if selections.any?
     sql << "\n GROUP BY #{drilldowns.map(&:variable).join(', ')}" if drilldowns.any?

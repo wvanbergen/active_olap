@@ -23,12 +23,25 @@ describe ActiveOLAP, 'SQL generation' do
 
   end
   
-  it "should generate UNIONed SQL correctly" do
+  it "should generate UNIONed SQL correctly for snapshot dimensions" do
+    accounts_receivable = ActiveOLAP.query("invoices", "account_id IS NOT NULL")
+    balance_date  = ActiveOLAP::Dimension::Snapshot.create(:balance_date, 
+                         :lower_bound => :created_on, :upper_bound => :bill_on)
+    total_revenue = ActiveOLAP.aggregate(:total_revenue, 'SUM(total_price)')
+    
+    accounts_receivable.drilldown_on(balance_date)
+    accounts_receivable.calculate(total_revenue)
+    
+    pre accounts_receivable.to_sql
+    result = ActiveOLAP.execute(accounts_receivable)
+  end
+  
+  it "should generate UNIONed SQL correctly for relative snapshot dimensions" do
     subscription_query = ActiveOLAP::Query.create(
         'subscription_periods is LEFT JOIN subscription_periods rs ON (is.account_id = rs.account_id)',
         'is.initial_subscription = 1')
 
-    snapshot_dimension = ActiveOLAP::Dimension::RelativeIntervalSnapshot.create(:snapshot_date, 
+    snapshot_dimension = ActiveOLAP::Dimension::RelativeSnapshot.create(:snapshot_date, 
         :lower_bound => 'rs.started_at', :upper_bound => 'rs.ended_at', :timestamp => 'is.started_at')
 
     subscription_query.drilldown_on(snapshot_dimension)
